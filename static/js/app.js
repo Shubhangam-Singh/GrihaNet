@@ -6,7 +6,7 @@ const {
 } = Recharts;
 
 /* ─── THEME ─── */
-const T = {
+const DARK = {
   bg:"#06090f",surface:"#0c1220",card:"#111a2e",
   border:"#1a2744",borderLight:"#243352",
   accent:"#00e5a0",accentDim:"#00e5a022",
@@ -18,6 +18,20 @@ const T = {
   text:"#e8edf5",textSec:"#7a8baa",textMuted:"#4a5878",
   gradient1:"linear-gradient(135deg, #00e5a0, #3391ff)",
 };
+const LIGHT = {
+  bg:"#f0f4f9",surface:"#ffffff",card:"#ffffff",
+  border:"#dce3ef",borderLight:"#e8edf8",
+  accent:"#00a370",accentDim:"#00a37018",
+  blue:"#2070e0",blueDim:"#2070e018",
+  orange:"#d96f20",orangeDim:"#d96f2018",
+  red:"#d93040",redDim:"#d9304018",
+  purple:"#7c3acd",purpleDim:"#7c3acd18",
+  cyan:"#059e74",
+  text:"#1a2235",textSec:"#445068",textMuted:"#7a8baa",
+  gradient1:"linear-gradient(135deg, #00a370, #2070e0)",
+};
+/* Mutable theme reference — mutated by the dark-mode toggle */
+const T = { ...DARK };
 
 /* ─── API HELPER ─── */
 const api = {
@@ -281,6 +295,7 @@ function GrihaNet(){
   const nextAlertId=useRef(100);
   const nextMotionId=useRef(100);
   const toastIdRef=useRef(0);
+  const [themeVersion,setThemeVersion]=useState(0);
   const [settings,setSettings]=useState({
     darkMode:true,autoRefresh:true,pushNotifications:true,soundAlerts:false,simulationMode:true,
     rate:6.5,highUsageThreshold:4.5,runtimeAlert:2,monthlyBudget:2500,
@@ -288,6 +303,15 @@ function GrihaNet(){
     motionSensitivity:"High",alertHoursStart:"23:00",alertHoursEnd:"06:00",
     snapshotOnMotion:true,recordClips:false,
   });
+
+  /* ─── Apply theme whenever darkMode setting changes ─── */
+  useEffect(()=>{
+    const theme=settings.darkMode?DARK:LIGHT;
+    Object.assign(T,theme);
+    document.body.style.background=theme.bg;
+    document.body.style.color=theme.text;
+    setThemeVersion(v=>v+1);
+  },[settings.darkMode]);
 
   const addToast=useCallback((icon,title,msg,color)=>{
     const id=++toastIdRef.current;
