@@ -476,6 +476,14 @@ function AutomationModal({appliances,onClose,onCreate}){
 function GrihaNet(){
   const [loggedIn,setLoggedIn]=useState(false);
   const [user,setUser]=useState(null);
+
+  useEffect(()=>{
+    try{
+      const t=localStorage.getItem('grihanet_token');
+      const u=localStorage.getItem('grihanet_user');
+      if(t && u){api.token=t;setUser(JSON.parse(u));setLoggedIn(true);}
+    }catch(e){}
+  },[]);
   const [tab,setTab]=useState("overview");
   const [appliances,setAppliances]=useState(INIT_APPLIANCES);
   const [devices,setDevices]=useState(INIT_DEVICES);
@@ -548,6 +556,7 @@ function GrihaNet(){
 
   const handleLogin=useCallback((u)=>{
     setUser(u);setLoggedIn(true);
+    try{localStorage.setItem('grihanet_token',api.token);localStorage.setItem('grihanet_user',JSON.stringify(u));}catch(e){}
   },[]);
 
   useEffect(()=>{if(loggedIn)fetchAll();},[loggedIn,fetchAll]);
@@ -670,7 +679,7 @@ function GrihaNet(){
         settings.simulationMode&&h(Badge,{text:"SIMULATION",color:T.orange}),
         h("div",{style:{position:"relative",cursor:"pointer"},onClick:()=>setTab("alerts")},h("span",{style:{fontSize:18}},"🔔"),unreadAlerts>0&&h("span",{style:{position:"absolute",top:-4,right:-6,width:16,height:16,borderRadius:"50%",background:T.red,fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,color:"#fff",animation:"pulse 2s infinite"}},unreadAlerts)),
         h("div",{style:{textAlign:"right"}},h("div",{style:{fontSize:13,fontFamily:"'IBM Plex Mono'",fontWeight:500}},now.toLocaleTimeString()),h("div",{style:{fontSize:10,color:T.textMuted}},now.toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short",year:"numeric"}))),
-        h("div",{onClick:()=>{api.token=null;setLoggedIn(false);},style:{width:34,height:34,borderRadius:"50%",background:T.redDim,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14},title:"Logout"},"🚪")
+        h("div",{onClick:()=>{api.token=null;setLoggedIn(false);setUser(null);try{localStorage.removeItem('grihanet_token');localStorage.removeItem('grihanet_user');}catch(e){}},style:{width:34,height:34,borderRadius:"50%",background:T.redDim,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14},title:"Logout"},"🚪")
       )
     ),
     /* TABS */
