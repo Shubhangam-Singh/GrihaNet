@@ -39,6 +39,14 @@ def create_app():
     app.register_blueprint(automations_bp, url_prefix="/api/automations")
     app.register_blueprint(dashboard_bp)
 
+    @app.route('/sw.js')
+    def serve_sw():
+        return app.send_static_file('sw.js')
+
+    @app.route('/manifest.json')
+    def serve_manifest():
+        return app.send_static_file('manifest.json')
+
     # Error handlers
     @app.errorhandler(404)
     def not_found(e):
