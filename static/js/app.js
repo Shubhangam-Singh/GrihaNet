@@ -257,47 +257,108 @@ function SpeedTest(){
   );
 }
 
-/* ─── LOGIN ─── */
-function LoginScreen({onLogin}){
+/* ─── AUTH SCREEN (Login + Register) ─── */
+function AuthScreen({onLogin}){
+  const [mode,setMode]=useState("login");  // "login" | "register"
+  // Login fields
   const [email,setEmail]=useState("admin@grihanet.com");
   const [pass,setPass]=useState("password123");
+  // Register fields
+  const [rName,setRName]=useState("");
+  const [rEmail,setREmai]=useState("");
+  const [rPass,setRPass]=useState("");
+  const [rConf,setRConf]=useState("");
+
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState("");
-  const inp={width:"100%",padding:"12px 16px",borderRadius:10,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:14,fontFamily:"'DM Sans'",outline:"none"};
+
+  const inp=(val,set,type="text",ph="")=>React.createElement("input",{
+    type,placeholder:ph,value:val,
+    onChange:e=>{set(e.target.value);setError("");},
+    style:{width:"100%",padding:"12px 16px",borderRadius:10,
+      border:`1px solid ${T.border}`,background:T.surface,
+      color:T.text,fontSize:14,fontFamily:"'DM Sans'",outline:"none",
+      marginBottom:12},
+  });
 
   const handleLogin=async()=>{
     if(!email||!pass){setError("Please fill all fields");return;}
     setLoading(true);setError("");
     const res=await api.post("/auth/login",{email,password:pass});
-    if(res&&res.token){
-      api.token=res.token;
-      onLogin(res.user);
-    } else {
-      setError(res?.error||"Login failed — server may be starting up. Try again.");
-    }
+    if(res&&res.token){api.token=res.token;onLogin(res.user);}
+    else setError(res?.error||"Login failed — server may be starting up.");
     setLoading(false);
   };
 
-  return React.createElement("div",{style:{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans'"}},
-    React.createElement("div",{style:{position:"absolute",inset:0,background:`radial-gradient(circle at 30% 40%,${T.accent}08 0%,transparent 50%),radial-gradient(circle at 70% 70%,${T.blue}06 0%,transparent 50%)`}}),
-    React.createElement("div",{className:"fadeUp",style:{width:380,position:"relative",zIndex:1}},
-      React.createElement("div",{style:{textAlign:"center",marginBottom:36}},
-        React.createElement("div",{style:{display:"inline-flex",alignItems:"center",justifyContent:"center",width:64,height:64,borderRadius:18,background:T.gradient1,fontSize:30,marginBottom:16,boxShadow:`0 8px 32px ${T.accent}33`}},"🏠"),
-        React.createElement("h1",{style:{fontSize:28,fontWeight:700,color:T.text,margin:0}},"Griha",React.createElement("span",{style:{color:T.accent}},"Net")),
-        React.createElement("p",{style:{color:T.textSec,fontSize:13,marginTop:6}},"Unified Smart Home Monitoring System")
+  const handleRegister=async()=>{
+    if(!rName||!rEmail||!rPass||!rConf){setError("Please fill all fields");return;}
+    setLoading(true);setError("");
+    const res=await api.post("/auth/register",{
+      name:rName,email:rEmail,password:rPass,confirm_password:rConf,
+    });
+    if(res&&res.token){api.token=res.token;onLogin(res.user);}
+    else setError(res?.error||"Registration failed. Please try again.");
+    setLoading(false);
+  };
+
+  const isLogin=mode==="login";
+  const h=React.createElement;
+
+  return h("div",{style:{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans'"}},
+    h("div",{style:{position:"absolute",inset:0,background:`radial-gradient(circle at 30% 40%,${T.accent}08 0%,transparent 50%),radial-gradient(circle at 70% 70%,${T.blue}06 0%,transparent 50%)`}}),
+    h("div",{className:"fadeUp",style:{width:400,position:"relative",zIndex:1}},
+      h("div",{style:{textAlign:"center",marginBottom:28}},
+        h("div",{style:{display:"inline-flex",alignItems:"center",justifyContent:"center",width:60,height:60,borderRadius:18,background:T.gradient1,fontSize:28,marginBottom:14,boxShadow:`0 8px 32px ${T.accent}33`}},"🏠"),
+        h("h1",{style:{fontSize:26,fontWeight:700,color:T.text,margin:0}},"Griha",h("span",{style:{color:T.accent}},"Net")),
+        h("p",{style:{color:T.textSec,fontSize:13,marginTop:5}},"Unified Smart Home Monitoring System")
       ),
-      React.createElement(Card,{style:{padding:28}},
-        React.createElement("div",{style:{marginBottom:16}},
-          React.createElement("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Email"),
-          React.createElement("input",{value:email,onChange:e=>{setEmail(e.target.value);setError("");},style:inp})
+      // Tab switcher
+      h("div",{style:{display:"flex",background:T.surface,borderRadius:12,padding:4,marginBottom:20,border:`1px solid ${T.border}`}},
+        ["login","register"].map(m=>
+          h("button",{key:m,onClick:()=>{setMode(m);setError("");},
+            style:{flex:1,padding:"10px 0",borderRadius:9,border:"none",
+              background:mode===m?T.gradient1:"transparent",
+              color:mode===m?"#000":T.textSec,
+              fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",
+              transition:"all .2s"}},
+            m==="login"?"Sign In":"Create Account")
+        )
+      ),
+      h(Card,{style:{padding:24}},
+        // ── LOGIN FORM ──
+        isLogin&&h(React.Fragment,null,
+          h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Email"),
+          inp(email,setEmail,"email"),
+          h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Password"),
+          inp(pass,setPass,"password"),
+          error&&h("div",{style:{fontSize:12,color:T.red,marginBottom:10,padding:"6px 10px",borderRadius:6,background:T.redDim}},error),
+          h("button",{onClick:handleLogin,disabled:loading,
+            style:{width:"100%",padding:"13px 0",borderRadius:10,border:"none",
+              background:loading?T.border:T.gradient1,color:loading?T.textMuted:"#000",
+              fontSize:14,fontWeight:700,cursor:loading?"default":"pointer",
+              fontFamily:"'DM Sans'",boxShadow:loading?"none":`0 4px 20px ${T.accent}33`,marginTop:4}},
+            loading?"Signing in...":"Sign In"),
+          h("p",{style:{textAlign:"center",fontSize:11,color:T.textMuted,marginTop:12}},"Demo: admin@grihanet.com / password123")
         ),
-        React.createElement("div",{style:{marginBottom:16}},
-          React.createElement("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Password"),
-          React.createElement("input",{type:"password",value:pass,onChange:e=>{setPass(e.target.value);setError("");},onKeyDown:e=>e.key==="Enter"&&handleLogin(),style:inp})
-        ),
-        error&&React.createElement("div",{style:{fontSize:12,color:T.red,marginBottom:12,padding:"6px 10px",borderRadius:6,background:T.redDim}},error),
-        React.createElement("button",{onClick:handleLogin,disabled:loading,style:{width:"100%",padding:"13px 0",borderRadius:10,border:"none",background:loading?T.border:T.gradient1,color:loading?T.textMuted:"#000",fontSize:14,fontWeight:700,cursor:loading?"default":"pointer",fontFamily:"'DM Sans'",boxShadow:loading?"none":`0 4px 20px ${T.accent}33`}},loading?"Signing in...":"Sign In"),
-        React.createElement("p",{style:{textAlign:"center",fontSize:11,color:T.textMuted,marginTop:14}},"Default: admin@grihanet.com / password123")
+        // ── REGISTER FORM ──
+        !isLogin&&h(React.Fragment,null,
+          h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Full Name"),
+          inp(rName,setRName,"text","e.g. Priya Sharma"),
+          h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Email"),
+          inp(rEmail,setREmai,"email","you@example.com"),
+          h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Password"),
+          inp(rPass,setRPass,"password","Min. 6 characters"),
+          h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Confirm Password"),
+          inp(rConf,setRConf,"password","Repeat your password"),
+          error&&h("div",{style:{fontSize:12,color:T.red,marginBottom:10,padding:"6px 10px",borderRadius:6,background:T.redDim}},error),
+          h("button",{onClick:handleRegister,disabled:loading,
+            style:{width:"100%",padding:"13px 0",borderRadius:10,border:"none",
+              background:loading?T.border:T.gradient1,color:loading?T.textMuted:"#000",
+              fontSize:14,fontWeight:700,cursor:loading?"default":"pointer",
+              fontFamily:"'DM Sans'",boxShadow:loading?"none":`0 4px 20px ${T.accent}33`,marginTop:4}},
+            loading?"Creating account...":"Create Account"),
+          h("p",{style:{textAlign:"center",fontSize:11,color:T.textMuted,marginTop:12}},"Your data is isolated — each account gets its own home 🏠")
+        )
       )
     )
   );
@@ -456,7 +517,7 @@ function GrihaNet(){
   const devIcons={phone:"📱",laptop:"💻",tv:"📺",gaming:"🎮",unknown:"❓"};
   const sevColor={high:T.red,medium:T.orange,low:T.textSec};
 
-  if(!loggedIn)return React.createElement(LoginScreen,{onLogin:handleLogin});
+  if(!loggedIn)return React.createElement(AuthScreen,{onLogin:handleLogin});
 
   /* ─── Layout builder helpers ─── */
   const h=React.createElement;
