@@ -8,9 +8,8 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "grihanet-secret-key-2026")
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR, 'grihanet.db')}"
-    )
+    _db_path = "/tmp/grihanet.db" if os.environ.get("VERCEL") else os.path.join(BASE_DIR, "grihanet.db")
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", f"sqlite:///{_db_path}")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # JWT
