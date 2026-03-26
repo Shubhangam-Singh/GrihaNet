@@ -207,3 +207,41 @@ class Settings(db.Model):
 
     def to_dict(self):
         return {"key": self.key, "value": self.value}
+
+
+# ═══════════════════════════════════════════════
+# AUTOMATIONS
+# ═══════════════════════════════════════════════
+class Automation(db.Model):
+    __tablename__ = "automations"
+
+    id            = db.Column(db.Integer, primary_key=True)
+    user_id       = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    name          = db.Column(db.String(100), nullable=False)
+    enabled       = db.Column(db.Boolean, default=True)
+
+    # Trigger: "power_exceeds" | "camera_detects" | "time_is" | "appliance_on"
+    trigger_type   = db.Column(db.String(30), nullable=False)
+    trigger_params = db.Column(db.Text, default="{}")   # JSON string
+
+    # Action: "turn_on" | "turn_off" | "create_alert"
+    action_type   = db.Column(db.String(30), nullable=False)
+    action_params = db.Column(db.Text, default="{}")    # JSON string
+
+    last_fired    = db.Column(db.DateTime, nullable=True)
+    created_at    = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        import json
+        return {
+            "id":             self.id,
+            "name":           self.name,
+            "enabled":        self.enabled,
+            "trigger_type":   self.trigger_type,
+            "trigger_params": json.loads(self.trigger_params or "{}"),
+            "action_type":    self.action_type,
+            "action_params":  json.loads(self.action_params or "{}"),
+            "last_fired":     self.last_fired.isoformat() if self.last_fired else None,
+            "created_at":     self.created_at.isoformat(),
+        }
+

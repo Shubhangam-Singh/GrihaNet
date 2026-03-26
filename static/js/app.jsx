@@ -364,7 +364,7 @@ function AuthScreen({onLogin}){
   );
 }
 
-/* ════════════════════════ MAIN APP ════════════════════════ */
+/* ─── AUTOMATION MODAL ─── */\nfunction AutomationModal({appliances,onClose,onCreate}){\n  const [step,setStep]=useState(1); // 1=trigger 2=action 3=name\n  const [trigType,setTrigType]=useState(\"power_exceeds\");\n  const [trigParams,setTrigParams]=useState({kw:\"5\",event:\"Person\",time:\"23:00\",appliance_id:\"1\",hours:\"2\"});\n  const [actType,setActType]=useState(\"create_alert\");\n  const [actParams,setActParams]=useState({appliance_id:\"1\",message:\"⚡ Alert from automation\",module:\"Power\",type:\"warning\"});\n  const [ruleName,setRuleName]=useState(\"\");\n  const [saving,setSaving]=useState(false);\n  const h=React.createElement;\n\n  const sel=(val,onChange,opts)=>h(\"select\",{value:val,onChange:e=>onChange(e.target.value),\n    style:{width:\"100%\",padding:\"10px 12px\",borderRadius:8,border:`1px solid ${T.border}`,\n      background:T.surface,color:T.text,fontSize:13,fontFamily:\"'DM Sans'\",marginBottom:12}},\n    opts.map(([v,l])=>h(\"option\",{key:v,value:v},l))\n  );\n  const inp2=(val,onChange,ph=\"\",type=\"text\")=>h(\"input\",{type,placeholder:ph,value:val,\n    onChange:e=>onChange(e.target.value),\n    style:{width:\"100%\",padding:\"10px 12px\",borderRadius:8,border:`1px solid ${T.border}`,\n      background:T.surface,color:T.text,fontSize:13,fontFamily:\"'DM Sans'\",marginBottom:12}});\n\n  const overlay={position:\"fixed\",inset:0,background:\"rgba(0,0,0,.7)\",display:\"flex\",\n    alignItems:\"center\",justifyContent:\"center\",zIndex:500,backdropFilter:\"blur(6px)\"};\n\n  const handleCreate=async()=>{\n    if(!ruleName.trim()){return;}\n    setSaving(true);\n    const rule={\n      name:ruleName.trim(),\n      trigger_type:trigType,\n      trigger_params:trigType===\"power_exceeds\"?{kw:parseFloat(trigParams.kw)}:trigType===\"camera_detects\"?{event:trigParams.event}:trigType===\"time_is\"?{time:trigParams.time}:{appliance_id:parseInt(trigParams.appliance_id),hours:parseFloat(trigParams.hours)},\n      action_type:actType,\n      action_params:actType===\"create_alert\"?{message:actParams.message,module:actParams.module,type:actParams.type,icon:\"🤖\"}:{appliance_id:parseInt(actParams.appliance_id)},\n    };\n    await onCreate(rule);\n    setSaving(false);\n  };\n\n  const stepLabel=[\"1. Trigger\",\"2. Action\",\"3. Name\"];\n  return h(\"div\",{style:overlay,onClick:onClose},\n    h(\"div\",{onClick:e=>e.stopPropagation(),\n      style:{width:480,borderRadius:16,background:T.card,border:`1px solid ${T.border}`,\n        padding:28,boxShadow:\"0 24px 60px rgba(0,0,0,.5)\"}},\n      /* Steps header */\n      h(\"div\",{style:{display:\"flex\",gap:8,marginBottom:20}},\n        stepLabel.map((l,i)=>h(\"div\",{key:i,style:{flex:1,textAlign:\"center\",padding:\"6px 0\",\n          borderRadius:8,fontSize:11,fontWeight:700,\n          background:step===i+1?T.gradient1:step>i+1?T.accentDim:T.surface,\n          color:step===i+1?\"#000\":step>i+1?T.accent:T.textMuted,border:`1px solid ${T.border}`}},l))\n      ),\n      h(\"h3\",{style:{fontSize:15,fontWeight:700,marginBottom:16,color:T.text}},\n        step===1?\"Choose what triggers this rule\":step===2?\"Choose what happens\":\"Name your rule\"\n      ),\n\n      /* Step 1 — Trigger */\n      step===1&&h(React.Fragment,null,\n        h(\"label\",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:\"block\",marginBottom:6}},\"TRIGGER TYPE\"),\n        sel(trigType,setTrigType,[[\"power_exceeds\",\"⚡ Power exceeds X kW\"],[\"camera_detects\",\"📹 Camera detects event\"],[\"time_is\",\"🕐 Time is (daily schedule)\"],[\"appliance_on\",\"🔌 Appliance on for X hours\"]]),\n        trigType===\"power_exceeds\"&&h(React.Fragment,null,h(\"label\",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:\"block\",marginBottom:6}},\"THRESHOLD (kW)\"),inp2(trigParams.kw,v=>setTrigParams(p=>({...p,kw:v})),\"e.g. 5.0\",\"number\")),\n        trigType===\"camera_detects\"&&h(React.Fragment,null,h(\"label\",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:\"block\",marginBottom:6}},\"EVENT TYPE\"),sel(trigParams.event,v=>setTrigParams(p=>({...p,event:v})),[[\"Person\",\"👤 Person\"],[\"Delivery\",\"📦 Delivery\"],[\"Vehicle\",\"🚗 Vehicle\"],[\"Animal\",\"🐈 Animal\"],[\"Motion\",\"🔵 Motion\"]])),\n        trigType===\"time_is\"&&h(React.Fragment,null,h(\"label\",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:\"block\",marginBottom:6}},\"TIME (24hr)\"),inp2(trigParams.time,v=>setTrigParams(p=>({...p,time:v})),\"23:00\")),\n        trigType===\"appliance_on\"&&h(React.Fragment,null,\n          h(\"label\",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:\"block\",marginBottom:6}},\"APPLIANCE\"),\n          sel(trigParams.appliance_id,v=>setTrigParams(p=>({...p,appliance_id:v})),appliances.map(a=>[String(a.id),a.icon+\" \"+a.name])),\n          h(\"label\",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:\"block\",marginBottom:6}},\"HOURS RUNNING\"),\n          inp2(trigParams.hours,v=>setTrigParams(p=>({...p,hours:v})),\"2\",\"number\")\n        )\n      ),\n\n      /* Step 2 — Action */\n      step===2&&h(React.Fragment,null,\n        h(\"label\",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:\"block\",marginBottom:6}},\"ACTION TYPE\"),\n        sel(actType,setActType,[[\"create_alert\",\"🔔 Create an alert\"],[\"turn_on\",\"✅ Turn ON an appliance\"],[\"turn_off\",\"❌ Turn OFF an appliance\"]]),\n        (actType===\"turn_on\"||actType===\"turn_off\")&&h(React.Fragment,null,\n          h(\"label\",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:\"block\",marginBottom:6}},\"APPLIANCE\"),\n          sel(actParams.appliance_id,v=>setActParams(p=>({...p,appliance_id:v})),appliances.map(a=>[String(a.id),a.icon+\" \"+a.name]))\n        ),\n        actType===\"create_alert\"&&h(React.Fragment,null,\n          h(\"label\",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:\"block\",marginBottom:6}},\"ALERT MESSAGE\"),\n          inp2(actParams.message,v=>setActParams(p=>({...p,message:v})),\"Alert message...\"),\n          h(\"label\",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:\"block\",marginBottom:6}},\"SEVERITY\"),\n          sel(actParams.type,v=>setActParams(p=>({...p,type:v})),[[\"danger\",\"🔴 Danger\"],[\"warning\",\"🟠 Warning\"],[\"info\",\"🔵 Info\"],[\"success\",\"🟢 Success\"]])\n        )\n      ),\n\n      /* Step 3 — Name */\n      step===3&&h(React.Fragment,null,\n        h(\"label\",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:\"block\",marginBottom:6}},\"RULE NAME\"),\n        inp2(ruleName,setRuleName,\"e.g. Night Power Saver\"),\n        h(\"div\",{style:{padding:\"12px 14px\",borderRadius:10,background:T.surface,border:`1px solid ${T.border}`,fontSize:12,color:T.textSec}},\n          h(\"div\",{style:{marginBottom:6}},h(\"strong\",{style:{color:T.blue}},\"IF \"),\"Power > \"+trigParams.kw+\" kW\" /* simplified preview */\n            .replace(\"Power > \"+trigParams.kw+\" kW\",{power_exceeds:`Power > ${trigParams.kw} kW`,camera_detects:`Camera detects ${trigParams.event}`,time_is:`Time is ${trigParams.time}`,appliance_on:`Appliance on for ${trigParams.hours}h`}[trigType]||trigType)),\n          h(\"div\",null,h(\"strong\",{style:{color:T.accent}},\"THEN \"),actType===\"create_alert\"?`Alert: \"${actParams.message}\"`:actType===\"turn_on\"?\"Turn ON appliance #\"+actParams.appliance_id:\"Turn OFF appliance #\"+actParams.appliance_id)\n        )\n      ),\n\n      /* Navigation buttons */\n      h(\"div\",{style:{display:\"flex\",justifyContent:\"space-between\",marginTop:20}},\n        h(\"button\",{onClick:step===1?onClose:()=>setStep(s=>s-1),\n          style:{padding:\"10px 20px\",borderRadius:10,border:`1px solid ${T.border}`,\n            background:\"transparent\",color:T.textSec,fontSize:13,fontWeight:600,\n            cursor:\"pointer\",fontFamily:\"'DM Sans'\"}},step===1?\"Cancel\":\"← Back\"),\n        step<3?h(\"button\",{onClick:()=>setStep(s=>s+1),\n          style:{padding:\"10px 20px\",borderRadius:10,border:\"none\",\n            background:T.gradient1,color:\"#000\",fontSize:13,fontWeight:700,\n            cursor:\"pointer\",fontFamily:\"'DM Sans'\"}},\"Next →\"):\n        h(\"button\",{onClick:handleCreate,disabled:saving||!ruleName.trim(),\n          style:{padding:\"10px 20px\",borderRadius:10,border:\"none\",\n            background:saving||!ruleName.trim()?T.border:T.gradient1,\n            color:saving||!ruleName.trim()?T.textMuted:\"#000\",\n            fontSize:13,fontWeight:700,cursor:\"pointer\",fontFamily:\"'DM Sans'\"}},\n          saving?\"Creating...\":\"🤖 Create Rule\")\n      )\n    )\n  );\n}\n\n/* ════════════════════════ MAIN APP ════════════════════════ */
 function GrihaNet(){
   const [loggedIn,setLoggedIn]=useState(false);
   const [user,setUser]=useState(null);
@@ -380,6 +380,8 @@ function GrihaNet(){
     {id:5,cam:"Garage",time:"10:30:11",type:"Vehicle",severity:"low",img:"🚗"},
   ]);
   const [alerts,setAlerts]=useState([]);
+  const [automations,setAutomations]=useState([]);
+  const [showAutoModal,setShowAutoModal]=useState(false);
   const [toasts,setToasts]=useState([]);
   const [powerData,setPowerData]=useState(genPowerHistory);
   const [weeklyData,setWeeklyData]=useState(genWeekly);
@@ -420,10 +422,10 @@ function GrihaNet(){
 
   /* ─── Fetch data from backend on login ─── */
   const fetchAll=useCallback(async()=>{
-    const [appData,devData,camData,alertData,settData,histData,wkData,bwData]=await Promise.all([
+    const [appData,devData,camData,alertData,settData,histData,wkData,bwData,autoData]=await Promise.all([
       api.get("/power/appliances"),api.get("/network/devices"),api.get("/cameras/"),
       api.get("/alerts/"),api.get("/settings/"),api.get("/power/history"),
-      api.get("/power/weekly"),api.get("/network/bandwidth"),
+      api.get("/power/weekly"),api.get("/network/bandwidth"),api.get("/automations/"),
     ]);
     if(appData)setAppliances(appData);
     if(devData)setDevices(devData);
@@ -433,6 +435,7 @@ function GrihaNet(){
     if(histData)setPowerData(histData);
     if(wkData)setWeeklyData(wkData);
     if(bwData)setBandwidthData(bwData);
+    if(autoData)setAutomations(autoData.automations||[]);
   },[]);
 
   const handleLogin=useCallback((u)=>{
@@ -502,6 +505,22 @@ function GrihaNet(){
     await api.put("/settings/",{[key]:val});
     addToast("⚙️","Settings Updated",key.replace(/([A-Z])/g," $1")+" changed",T.accent);
   };
+  const createAutomation=async(rule)=>{
+    const res=await api.post("/automations/",rule);
+    if(res&&res.automation){
+      setAutomations(a=>[res.automation,...a]);
+      addToast("🤖","Automation Created",res.automation.name,T.accent);
+    }
+  };
+  const deleteAutomation=async(id)=>{
+    await api.del("/automations/"+id);
+    setAutomations(a=>a.filter(x=>x.id!==id));
+    addToast("🗑","Automation Deleted","",T.red);
+  };
+  const toggleAutomation=async(a)=>{
+    const res=await api.put("/automations/"+a.id,{enabled:!a.enabled});
+    if(res&&res.automation)setAutomations(list=>list.map(x=>x.id===a.id?res.automation:x));
+  };
 
   const liveWatts=appliances.filter(a=>a.on).reduce((s,a)=>s+a.watts,0);
   const liveKw=(liveWatts/1000).toFixed(2);
@@ -521,7 +540,15 @@ function GrihaNet(){
 
   /* ─── Layout builder helpers ─── */
   const h=React.createElement;
-  const tabs=[{id:"overview",icon:"🏠",label:"Overview"},{id:"power",icon:"⚡",label:"Power"},{id:"network",icon:"🌐",label:"Network"},{id:"cameras",icon:"📹",label:"Cameras"},{id:"alerts",icon:"🔔",label:"Alerts",count:unreadAlerts},{id:"settings",icon:"⚙️",label:"Settings"}];
+  const tabs=[
+    {id:"overview",icon:"🏠",label:"Overview"},
+    {id:"power",icon:"⚡",label:"Power"},
+    {id:"network",icon:"🌐",label:"Network"},
+    {id:"cameras",icon:"📹",label:"Cameras"},
+    {id:"alerts",icon:"🔔",label:"Alerts",count:unreadAlerts},
+    {id:"automations",icon:"🤖",label:"Automations"},
+    {id:"settings",icon:"⚙️",label:"Settings"},
+  ];
 
   return h("div",{style:{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif"}},
     h(Toast,{toasts}),
@@ -636,6 +663,71 @@ function GrihaNet(){
           h("div",{style:{flex:1}},h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:4}},h(Badge,{text:a.type,color:alertColor[a.type]||T.blue}),h(Badge,{text:a.module,color:T.textSec}),!a.read&&h("span",{style:{width:7,height:7,borderRadius:"50%",background:T.accent}})),h("div",{style:{fontSize:13,lineHeight:1.5,marginTop:4}},a.icon," ",a.msg),h("div",{style:{fontSize:10,color:T.textMuted,marginTop:6}},a.time)),
           !a.read&&h("button",{onClick:()=>dismissAlert(a.id),style:{padding:"6px 14px",borderRadius:8,border:"none",background:T.border,color:T.textSec,fontSize:11,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600,marginLeft:12}},"Dismiss")
         )))
+      ),
+
+      /* ═══ AUTOMATIONS ═══ */
+      tab==="automations"&&h(React.Fragment,null,
+        /* New Rule Modal */
+        showAutoModal&&h(AutomationModal,{appliances,onClose:()=>setShowAutoModal(false),onCreate:async rule=>{await createAutomation(rule);setShowAutoModal(false);}}),
+        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
+          h("div",null,
+            h("h2",{style:{fontSize:18,fontWeight:700,margin:0}},"🤖 Automations"),
+            h("p",{style:{fontSize:12,color:T.textMuted,marginTop:2}},automations.length+" rule"+(automations.length!==1?"s":""))
+          ),
+          h("button",{onClick:()=>setShowAutoModal(true),
+            style:{padding:"10px 20px",borderRadius:10,border:"none",background:T.gradient1,
+              color:"#000",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",
+              boxShadow:`0 4px 20px ${T.accent}33`}},"+ New Rule")
+        ),
+        automations.length===0&&h(Card,{style:{textAlign:"center",padding:48}},
+          h("div",{style:{fontSize:40,marginBottom:12}},"🤖"),
+          h("div",{style:{fontSize:15,fontWeight:600,color:T.text,marginBottom:6}},"No automations yet"),
+          h("div",{style:{fontSize:12,color:T.textMuted}},"Create IF-THEN rules to automate your home"),
+          h("button",{onClick:()=>setShowAutoModal(true),
+            style:{marginTop:16,padding:"10px 24px",borderRadius:10,border:"none",
+              background:T.gradient1,color:"#000",fontSize:13,fontWeight:700,
+              cursor:"pointer",fontFamily:"'DM Sans'"}},"Create your first rule")
+        ),
+        h("div",{style:{display:"flex",flexDirection:"column",gap:10}},
+          automations.map(rule=>{
+            const now2=new Date();
+            const firedRecently=rule.last_fired&&(now2-new Date(rule.last_fired))/1000<60;
+            const triggerLabel={power_exceeds:`Power > ${rule.trigger_params.kw||5} kW`,camera_detects:`Camera detects ${rule.trigger_params.event||"Person"}`,time_is:`Time is ${rule.trigger_params.time||"23:00"}`,appliance_on:`Appliance on for ${rule.trigger_params.hours||2}h`}[rule.trigger_type]||rule.trigger_type;
+            const actionLabel={turn_on:`Turn ON appliance #${rule.action_params.appliance_id||"?"}`,turn_off:`Turn OFF appliance #${rule.action_params.appliance_id||"?"}`,create_alert:rule.action_params.message||"Create alert"}[rule.action_type]||rule.action_type;
+            const appliance=appliances.find(a=>a.id===(rule.action_params.appliance_id||0));
+            const actionDisplay=appliance?((rule.action_type==="turn_on"?"Turn ON ":"Turn OFF ")+appliance.icon+" "+appliance.name):actionLabel;
+            return h(Card,{key:rule.id,style:{opacity:rule.enabled?1:.55,borderLeft:`3px solid ${rule.enabled?T.accent:T.border}`,transition:"all .3s"}},
+              h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
+                h("div",{style:{flex:1}},
+                  h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:8}},
+                    h("span",{style:{fontSize:15,fontWeight:700,color:T.text}},rule.name),
+                    firedRecently&&h("span",{style:{fontSize:10,padding:"3px 8px",borderRadius:20,background:T.accent+"22",color:T.accent,fontWeight:700,animation:"pulse 2s infinite"}},"⚡ TRIGGERED")
+                  ),
+                  h("div",{style:{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}},
+                    h("div",{style:{padding:"6px 12px",borderRadius:8,background:T.blueDim,border:`1px solid ${T.blue}33`,fontSize:12}},
+                      h("span",{style:{color:T.textMuted,fontSize:10,marginRight:5}},"IF"),
+                      h("strong",{style:{color:T.blue}},triggerLabel)
+                    ),
+                    h("span",{style:{fontSize:20}},"→"),
+                    h("div",{style:{padding:"6px 12px",borderRadius:8,background:T.accentDim,border:`1px solid ${T.accent}33`,fontSize:12}},
+                      h("span",{style:{color:T.textMuted,fontSize:10,marginRight:5}},"THEN"),
+                      h("strong",{style:{color:T.accent}},actionDisplay)
+                    )
+                  ),
+                  rule.last_fired&&h("div",{style:{fontSize:10,color:T.textMuted,marginTop:6}},
+                    "Last fired: "+new Date(rule.last_fired).toLocaleTimeString()
+                  )
+                ),
+                h("div",{style:{display:"flex",alignItems:"center",gap:10,marginLeft:14}},
+                  h(Toggle,{on:rule.enabled,onToggle:()=>toggleAutomation(rule)}),
+                  h("button",{onClick:()=>deleteAutomation(rule.id),
+                    style:{padding:"6px 10px",borderRadius:8,border:"none",
+                      background:T.redDim,color:T.red,fontSize:14,cursor:"pointer"}},"🗑")
+                )
+              )
+            );
+          })
+        )
       ),
 
       /* ═══ SETTINGS ═══ */

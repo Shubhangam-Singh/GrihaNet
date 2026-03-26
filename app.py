@@ -28,6 +28,7 @@ def create_app():
     from routes.alerts import alerts_bp
     from routes.settings import settings_bp
     from routes.dashboard import dashboard_bp
+    from routes.automations import automations_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(power_bp, url_prefix="/api/power")
@@ -35,6 +36,7 @@ def create_app():
     app.register_blueprint(cameras_bp, url_prefix="/api/cameras")
     app.register_blueprint(alerts_bp, url_prefix="/api/alerts")
     app.register_blueprint(settings_bp, url_prefix="/api/settings")
+    app.register_blueprint(automations_bp, url_prefix="/api/automations")
     app.register_blueprint(dashboard_bp)
 
     # Error handlers
@@ -46,10 +48,14 @@ def create_app():
     def server_error(e):
         return jsonify({"error": "Internal server error"}), 500
 
-    # Create tables and seed
+    # Create tables, seed, and start background engine
     with app.app_context():
         db.create_all()
         seed_database()
+
+    # Start automation evaluation engine (background daemon thread)
+    from services.automation_engine import start_engine
+    start_engine(app)
 
     return app
 
