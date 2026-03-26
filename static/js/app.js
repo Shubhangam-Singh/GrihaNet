@@ -54,6 +54,39 @@ const api = {
   del: (p) => api.call(p, { method: "DELETE" }),
 };
 
+/* ─── SOUND ALERTS (Web Audio API) ─── */
+let _audioCtx = null;
+function playAlertBeep(isHighSeverity) {
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = _audioCtx.createOscillator();
+    const gain = _audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(_audioCtx.destination);
+    // High severity = two short high beeps; medium/info = one low beep
+    const freq = isHighSeverity ? 880 : 520;
+    const dur  = isHighSeverity ? 0.12 : 0.18;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, _audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.25, _audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + dur);
+    osc.start(_audioCtx.currentTime);
+    osc.stop(_audioCtx.currentTime + dur);
+    if (isHighSeverity) {
+      // second beep
+      const osc2 = _audioCtx.createOscillator();
+      const gain2 = _audioCtx.createGain();
+      osc2.connect(gain2); gain2.connect(_audioCtx.destination);
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(freq, _audioCtx.currentTime + dur + 0.06);
+      gain2.gain.setValueAtTime(0.25, _audioCtx.currentTime + dur + 0.06);
+      gain2.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + dur*2 + 0.06);
+      osc2.start(_audioCtx.currentTime + dur + 0.06);
+      osc2.stop(_audioCtx.currentTime + dur*2 + 0.06);
+    }
+  } catch(e) { /* AudioContext unavailable */ }
+}
+
 /* ─── FALLBACK DATA ─── */
 const genPowerHistory = () => Array.from({ length: 24 }, (_, i) => {
   const base = i >= 6 && i <= 22 ? 1.5 : 0.5;
@@ -295,6 +328,7 @@ function GrihaNet(){
   const nextAlertId=useRef(100);
   const nextMotionId=useRef(100);
   const toastIdRef=useRef(0);
+  const soundAlertsRef=useRef(false);
   const [themeVersion,setThemeVersion]=useState(0);
   const [settings,setSettings]=useState({
     darkMode:true,autoRefresh:true,pushNotifications:true,soundAlerts:false,simulationMode:true,
@@ -313,10 +347,14 @@ function GrihaNet(){
     setThemeVersion(v=>v+1);
   },[settings.darkMode]);
 
+  /* Keep soundAlertsRef in sync so the stable addToast closure can read it */
+  useEffect(()=>{soundAlertsRef.current=settings.soundAlerts;},[settings.soundAlerts]);
+
   const addToast=useCallback((icon,title,msg,color)=>{
     const id=++toastIdRef.current;
     setToasts(t=>[{id,icon,title,msg,color},...t].slice(0,3));
     setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3500);
+    if(soundAlertsRef.current) playAlertBeep(color===DARK.red||color===LIGHT.red||color===DARK.orange||color===LIGHT.orange);
   },[]);
 
   /* ─── Fetch data from backend on login ─── */
