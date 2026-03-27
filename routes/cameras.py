@@ -1,7 +1,7 @@
 """Surveillance & Security Module API routes."""
 
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, Camera, MotionEvent, Alert
 from services.simulation import generate_motion_event
 from datetime import datetime, timezone
@@ -12,8 +12,9 @@ cameras_bp = Blueprint("cameras", __name__)
 @cameras_bp.route("/", methods=["GET"])
 @jwt_required()
 def get_cameras():
-    """Get all cameras with status."""
-    cameras = Camera.query.all()
+    """Get all cameras for the current user."""
+    uid = get_jwt_identity()
+    cameras = Camera.query.filter_by(user_id=uid).all()
     return jsonify([c.to_dict() for c in cameras])
 
 
@@ -21,7 +22,8 @@ def get_cameras():
 @jwt_required()
 def toggle_camera(cid):
     """Toggle camera active/offline."""
-    camera = Camera.query.get_or_404(cid)
+    uid = get_jwt_identity()
+    camera = Camera.query.filter_by(id=cid, user_id=uid).first_or_404()
     camera.status = "offline" if camera.status == "active" else "active"
     db.session.commit()
 
@@ -44,8 +46,9 @@ def get_motion_events():
 @cameras_bp.route("/motions/simulate", methods=["POST"])
 @jwt_required()
 def simulate_motion():
-    """Simulate a motion event on a random active camera (for demo)."""
-    active_cams = Camera.query.filter_by(status="active").all()
+    """Simulate a motion event on a random active camera for the current user."""
+    uid = get_jwt_identity()
+    active_cams = Camera.query.filter_by(status="active", user_id=uid).all()
     if not active_cams:
         return jsonify({"error": "No active cameras"}), 400
 
@@ -66,7 +69,7 @@ def simulate_motion():
         alert = Alert(
             alert_type="warning",
             message=f"{event_data['type']} detected at {cam.name} camera",
-            icon="📹", module="Security", user_id=1,
+            icon="📹", module="Security", user_id=uid,
         )
         db.session.add(alert)
 
@@ -82,9 +85,11 @@ def simulate_motion():
 @cameras_bp.route("/summary", methods=["GET"])
 @jwt_required()
 def camera_summary():
-    """Get camera module summary."""
-    cameras = Camera.query.all()
+    """Get camera module summary for current user."""
+    uid = get_jwt_identity()
+    cameras = Camera.query.filter_by(user_id=uid).all()
     active = sum(1 for c in cameras if c.status == "active")
+    # Motion events are global (not user-scoped), just count overall
     total_events = MotionEvent.query.count()
     persons = MotionEvent.query.filter_by(event_type="Person").count()
 

@@ -1,7 +1,7 @@
 """Power Monitoring Module API routes."""
 
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, Appliance, PowerReading, Settings
 from services.simulation import (
     generate_power_history_24h, generate_weekly_data, get_energy_recommendations
@@ -10,15 +10,19 @@ from services.simulation import (
 power_bp = Blueprint("power", __name__)
 
 
+def _user_rate(uid):
+    s = Settings.query.filter_by(user_id=uid, key="rate").first()
+    return float(s.value) if s else 6.5
+
+
 @power_bp.route("/live", methods=["GET"])
 @jwt_required()
 def live_power():
-    """Get current live power draw from all ON appliances."""
-    appliances = Appliance.query.filter_by(is_on=True).all()
+    """Get current live power draw from all ON appliances for current user."""
+    uid = get_jwt_identity()
+    appliances = Appliance.query.filter_by(user_id=uid, is_on=True).all()
     total_watts = sum(a.watts for a in appliances)
-
-    rate_setting = Settings.query.filter_by(key="rate").first()
-    rate = float(rate_setting.value) if rate_setting else 6.5
+    rate = _user_rate(uid)
 
     return jsonify({
         "totalWatts": total_watts,
@@ -32,10 +36,10 @@ def live_power():
 @power_bp.route("/appliances", methods=["GET"])
 @jwt_required()
 def get_appliances():
-    """Get all registered appliances with status."""
-    appliances = Appliance.query.all()
-    rate_setting = Settings.query.filter_by(key="rate").first()
-    rate = float(rate_setting.value) if rate_setting else 6.5
+    """Get all registered appliances for current user."""
+    uid = get_jwt_identity()
+    appliances = Appliance.query.filter_by(user_id=uid).all()
+    rate = _user_rate(uid)
 
     result = []
     for a in appliances:
@@ -48,8 +52,9 @@ def get_appliances():
 @power_bp.route("/appliances/<int:aid>/toggle", methods=["PUT"])
 @jwt_required()
 def toggle_appliance(aid):
-    """Toggle an appliance on/off."""
-    appliance = Appliance.query.get_or_404(aid)
+    """Toggle an appliance on/off (must belong to current user)."""
+    uid = get_jwt_identity()
+    appliance = Appliance.query.filter_by(id=aid, user_id=uid).first_or_404()
     appliance.is_on = not appliance.is_on
     db.session.commit()
 
@@ -81,8 +86,9 @@ def weekly_data():
 @power_bp.route("/rooms", methods=["GET"])
 @jwt_required()
 def room_breakdown():
-    """Get power consumption grouped by room."""
-    appliances = Appliance.query.filter_by(is_on=True).all()
+    """Get power consumption grouped by room for current user."""
+    uid = get_jwt_identity()
+    appliances = Appliance.query.filter_by(user_id=uid, is_on=True).all()
     rooms = {}
     for a in appliances:
         rooms[a.room] = rooms.get(a.room, 0) + a.watts
@@ -102,10 +108,10 @@ def room_breakdown():
 @power_bp.route("/recommendations", methods=["GET"])
 @jwt_required()
 def recommendations():
-    """Get energy-saving recommendations based on current usage."""
-    appliances = Appliance.query.all()
-    rate_setting = Settings.query.filter_by(key="rate").first()
-    rate = float(rate_setting.value) if rate_setting else 6.5
+    """Get energy-saving recommendations for current user."""
+    uid = get_jwt_identity()
+    appliances = Appliance.query.filter_by(user_id=uid).all()
+    rate = _user_rate(uid)
     recs = get_energy_recommendations(appliances, rate)
     return jsonify(recs)
 
@@ -113,17 +119,17 @@ def recommendations():
 @power_bp.route("/summary", methods=["GET"])
 @jwt_required()
 def power_summary():
-    """Get power module summary for overview."""
-    appliances = Appliance.query.all()
+    """Get power module summary for current user."""
+    uid = get_jwt_identity()
+    appliances = Appliance.query.filter_by(user_id=uid).all()
     on_apps = [a for a in appliances if a.is_on]
     total_watts = sum(a.watts for a in on_apps)
     history = generate_power_history_24h()
     total_kwh = round(sum(h["kw"] for h in history), 1)
 
-    rate_setting = Settings.query.filter_by(key="rate").first()
-    rate = float(rate_setting.value) if rate_setting else 6.5
-    budget_setting = Settings.query.filter_by(key="monthlyBudget").first()
-    budget = float(budget_setting.value) if budget_setting else 2500
+    rate = _user_rate(uid)
+    budget_s = Settings.query.filter_by(user_id=uid, key="monthlyBudget").first()
+    budget = float(budget_s.value) if budget_s else 2500
 
     today_cost = round(total_kwh * rate, 0)
     monthly_est = today_cost * 30

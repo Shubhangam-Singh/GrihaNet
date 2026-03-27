@@ -1,7 +1,7 @@
 """Network Monitoring Module API routes."""
 
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, NetworkDevice, Settings
 from services.simulation import generate_bandwidth_history, simulate_speed_test
 
@@ -11,21 +11,20 @@ network_bp = Blueprint("network", __name__)
 @network_bp.route("/devices", methods=["GET"])
 @jwt_required()
 def get_devices():
-    """Get all network devices."""
-    devices = NetworkDevice.query.all()
+    """Get all network devices for current user."""
+    uid = get_jwt_identity()
+    devices = NetworkDevice.query.filter_by(user_id=uid).all()
     return jsonify([d.to_dict() for d in devices])
 
 
 @network_bp.route("/devices/<int:did>/block", methods=["PUT"])
 @jwt_required()
 def toggle_block(did):
-    """Block or unblock a device."""
-    device = NetworkDevice.query.get_or_404(did)
+    """Block or unblock a device (must belong to current user)."""
+    uid = get_jwt_identity()
+    device = NetworkDevice.query.filter_by(id=did, user_id=uid).first_or_404()
     device.is_blocked = not device.is_blocked
-    if device.is_blocked:
-        device.is_online = False
-    else:
-        device.is_online = True
+    device.is_online = not device.is_blocked
     db.session.commit()
 
     return jsonify({
@@ -41,7 +40,8 @@ def toggle_block(did):
 @jwt_required()
 def toggle_whitelist(did):
     """Toggle device whitelist status."""
-    device = NetworkDevice.query.get_or_404(did)
+    uid = get_jwt_identity()
+    device = NetworkDevice.query.filter_by(id=did, user_id=uid).first_or_404()
     device.is_whitelisted = not device.is_whitelisted
     db.session.commit()
     return jsonify({
@@ -69,8 +69,9 @@ def speed_test():
 @network_bp.route("/summary", methods=["GET"])
 @jwt_required()
 def network_summary():
-    """Get network module summary."""
-    devices = NetworkDevice.query.all()
+    """Get network module summary for current user."""
+    uid = get_jwt_identity()
+    devices = NetworkDevice.query.filter_by(user_id=uid).all()
     online = [d for d in devices if d.is_online]
     blocked = [d for d in devices if d.is_blocked]
     unknown = [d for d in devices if not d.is_whitelisted]
@@ -88,8 +89,9 @@ def network_summary():
 @network_bp.route("/screentime", methods=["GET"])
 @jwt_required()
 def screen_time():
-    """Get estimated screen time per device."""
-    devices = NetworkDevice.query.filter_by(is_online=True).all()
+    """Get estimated screen time per device for current user."""
+    uid = get_jwt_identity()
+    devices = NetworkDevice.query.filter_by(user_id=uid, is_online=True).all()
     result = []
     for d in devices:
         if d.bandwidth_used > 0:
