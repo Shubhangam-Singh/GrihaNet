@@ -1,4 +1,4 @@
-const CACHE_NAME = 'grihanet-pwa-v2';
+const CACHE_NAME = 'grihanet-pwa-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/static/js/app.js',

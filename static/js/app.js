@@ -472,6 +472,83 @@ function AutomationModal({appliances,onClose,onCreate}){
   );
 }
 
+/* ─── VOICE COMMAND HOOK ─── */
+function useVoiceCommands({appliances,setTab,toggleAppliance,addToast}){
+  const [listening,setListening]=useState(false);
+  const [transcript,setTranscript]=useState("");
+  const [feedback,setFeedback]=useState(null);
+  const recogRef=useRef(null);
+
+  const TABS={overview:"overview",power:"power",network:"network",cameras:"cameras",camera:"cameras",alerts:"alerts",alert:"alerts",automations:"automations",automation:"automations",settings:"settings",setting:"settings",home:"overview"};
+
+  const showFeedback=(ok,msg)=>{
+    setFeedback({ok,msg});
+    setTimeout(()=>setFeedback(null),3000);
+    addToast(ok?"🎤":"❌",ok?"Voice Command":"Not understood",msg,ok?T.accent:T.orange);
+  };
+
+  const processCommand=useCallback((raw)=>{
+    const txt=raw.toLowerCase().trim();
+    setTranscript(txt);
+
+    // ─── Tab navigation ───
+    const navMatch=txt.match(/(?:show|go to|navigate to|open)\s+(\w+)/);
+    if(navMatch){
+      const dest=TABS[navMatch[1]];
+      if(dest){setTab(dest);showFeedback(true,`Navigating to ${navMatch[1]}`);return;}
+    }
+    // Plain tab name as command
+    for(const [word,id] of Object.entries(TABS)){
+      if(txt===word||txt===word+"s"){setTab(id);showFeedback(true,`Switched to ${id}`);return;}
+    }
+
+    // ─── Appliance toggle ───
+    const onMatch=txt.match(/turn on(?:\s+the)?\s+(.+)/);
+    const offMatch=txt.match(/turn off(?:\s+the)?\s+(.+)/);
+    const target=onMatch?onMatch[1]:offMatch?offMatch[1]:null;
+    const wantOn=!!onMatch;
+    if(target){
+      if(target==="everything"||target==="all"){
+        appliances.forEach(a=>{if(a.on!==wantOn)toggleAppliance(a.id);});
+        showFeedback(true,wantOn?"Turning on everything":"Turning off everything");return;
+      }
+      if(target.includes("light")||target.includes("lights")){
+        const lights=appliances.filter(a=>a.name.toLowerCase().includes("light")||a.name.toLowerCase().includes("tube")||a.name.toLowerCase().includes("lamp"));
+        lights.forEach(a=>{if(a.on!==wantOn)toggleAppliance(a.id);});
+        showFeedback(true,(wantOn?"Turning on":"Turning off")+` ${lights.length} light(s)`);return;
+      }
+      const found=appliances.find(a=>a.name.toLowerCase().includes(target)||target.includes(a.name.toLowerCase().split(" ")[0].toLowerCase()));
+      if(found){
+        if(found.on!==wantOn)toggleAppliance(found.id);
+        showFeedback(true,`${wantOn?"Turning on":"Turning off"} ${found.name}`);return;
+      }
+      showFeedback(false,`Couldn't find "${target}"`);return;
+    }
+
+    showFeedback(false,`"${txt}" — try: "turn on geyser" or "show power"`);
+  },[appliances,setTab,toggleAppliance]);
+
+  const startListening=useCallback(()=>{
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){addToast("❌","Not supported","Your browser does not support voice commands",T.red);return;}
+    if(listening){recogRef.current&&recogRef.current.stop();setListening(false);return;}
+    const r=new SR();
+    r.continuous=false;r.interimResults=true;r.lang="en-IN";
+    r.onstart=()=>setListening(true);
+    r.onresult=(e)=>{
+      const t=Array.from(e.results).map(x=>x[0].transcript).join(" ");
+      setTranscript(t);
+      if(e.results[e.results.length-1].isFinal)processCommand(t);
+    };
+    r.onerror=()=>setListening(false);
+    r.onend=()=>{setListening(false);setTranscript("");};
+    r.start();
+    recogRef.current=r;
+  },[listening,processCommand,addToast]);
+
+  return {listening,transcript,feedback,startListening};
+}
+
 /* ════════════════════════ MAIN APP ════════════════════════ */
 function GrihaNet(){
   const [loggedIn,setLoggedIn]=useState(false);
@@ -639,6 +716,8 @@ function GrihaNet(){
     if(res&&res.automation)setAutomations(list=>list.map(x=>x.id===a.id?res.automation:x));
   };
 
+  const {listening,transcript,feedback,startListening}=useVoiceCommands({appliances,setTab,toggleAppliance,addToast});
+
   const liveWatts=appliances.filter(a=>a.on).reduce((s,a)=>s+a.watts,0);
   const liveKw=(liveWatts/1000).toFixed(2);
   const todayKwh=powerData.reduce((s,d)=>s+d.kw,0).toFixed(1);
@@ -679,7 +758,30 @@ function GrihaNet(){
         settings.simulationMode&&h(Badge,{text:"SIMULATION",color:T.orange}),
         h("div",{style:{position:"relative",cursor:"pointer"},onClick:()=>setTab("alerts")},h("span",{style:{fontSize:18}},"🔔"),unreadAlerts>0&&h("span",{style:{position:"absolute",top:-4,right:-6,width:16,height:16,borderRadius:"50%",background:T.red,fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,color:"#fff",animation:"pulse 2s infinite"}},unreadAlerts)),
         h("div",{style:{textAlign:"right"}},h("div",{style:{fontSize:13,fontFamily:"'IBM Plex Mono'",fontWeight:500}},now.toLocaleTimeString()),h("div",{style:{fontSize:10,color:T.textMuted}},now.toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short",year:"numeric"}))),
+        /* 🎤 MIC BUTTON */
+        h("div",{onClick:startListening,title:listening?"Stop listening":"Start voice command",
+          style:{width:34,height:34,borderRadius:"50%",
+            background:listening?T.red+"33":T.accentDim,
+            border:`1px solid ${listening?T.red:T.accent}`,
+            display:"flex",alignItems:"center",justifyContent:"center",
+            cursor:"pointer",fontSize:16,
+            animation:listening?"pulse 1.2s infinite":"none",
+            transition:"all .2s"}},listening?"🔴":"🎤"),
         h("div",{onClick:()=>{api.token=null;setLoggedIn(false);setUser(null);try{localStorage.removeItem('grihanet_token');localStorage.removeItem('grihanet_user');}catch(e){}},style:{width:34,height:34,borderRadius:"50%",background:T.redDim,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14},title:"Logout"},"🚪")
+      )
+    ),
+    /* VOICE FEEDBACK OVERLAY */
+    (listening||feedback)&&h("div",{style:{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",
+      background:T.card,border:`1px solid ${listening?T.accent:feedback?.ok?T.accent:T.orange}`,
+      borderRadius:16,padding:"14px 24px",zIndex:300,boxShadow:"0 8px 32px rgba(0,0,0,.4)",
+      display:"flex",alignItems:"center",gap:12,minWidth:260,maxWidth:420,
+      animation:"slideDown .3s ease"}},
+      h("div",{style:{fontSize:24,animation:listening?"pulse 1s infinite":"none"}},listening?"🎤":feedback?.ok?"✅":"❌"),
+      h("div",null,
+        h("div",{style:{fontSize:13,fontWeight:700,color:T.text}},
+          listening?(transcript||"Listening… speak now"):feedback?.msg),
+        listening&&h("div",{style:{fontSize:11,color:T.textMuted,marginTop:2}},
+          'Try: "turn on geyser" • "show power" • "turn off lights"')
       )
     ),
     /* TABS */
