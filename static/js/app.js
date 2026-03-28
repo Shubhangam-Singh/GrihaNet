@@ -472,6 +472,127 @@ function AutomationModal({appliances,onClose,onCreate}){
   );
 }
 
+/* ─── ADMIN PANEL ─── */
+function AdminPanel({user,addToast}){
+  const [users,setUsers]=useState([]);
+  const [stats,setStats]=useState(null);
+  const [showAdd,setShowAdd]=useState(false);
+  const h=React.createElement;
+
+  const fetchUsers=useCallback(async()=>{
+    const res=await api.get("/admin/users");
+    if(res&&res.users)setUsers(res.users);
+    const s=await api.get("/admin/stats");
+    if(s)setStats(s);
+  },[]);
+
+  useEffect(()=>{fetchUsers();},[fetchUsers]);
+
+  const toggleRole=async(u)=>{
+    if(u.id===user.id){addToast("❌","Error","Cannot change your own role",T.red);return;}
+    const res=await api.put(`/admin/users/${u.id}/role`);
+    if(res) { addToast("🛡️","Role Updated",res.message,T.blue); fetchUsers(); }
+  };
+  const deactivate=async(u)=>{
+    if(u.id===user.id){addToast("❌","Error","Cannot deactivate yourself",T.red);return;}
+    if(!confirm(`Are you sure you want to ${u.is_active?"deactivate":"activate"} ${u.name}?`))return;
+    const res=await api.put(`/admin/users/${u.id}/active`);
+    if(res) { addToast("⚠️","Status Changed",res.message,T.orange); fetchUsers(); }
+  };
+  const deleteUser=async(u)=>{
+    if(u.id===user.id){addToast("❌","Error","Cannot delete yourself",T.red);return;}
+    if(confirm(`WARNING: Deleting ${u.name} will erase all their devices, appliances, and data forever. Proceed?`)){
+      const res=await api.del(`/admin/users/${u.id}`);
+      if(res){addToast("🗑","User Deleted",res.message,T.red);fetchUsers();}
+    }
+  };
+  const resetPassword=async(u)=>{
+    const np=prompt(`Enter new password for ${u.name} (min 6 chars):`);
+    if(!np)return;
+    if(np.length<6){addToast("❌","Error","Password too short",T.red);return;}
+    const res=await api.put(`/admin/users/${u.id}/password`,{password:np});
+    if(res)addToast("🔑","Password Reset",res.message,T.accent);
+  };
+
+  const handleCreate=async(e)=>{
+    e.preventDefault();
+    const fd=new FormData(e.target);
+    const res=await api.post("/admin/users",Object.fromEntries(fd));
+    if(res){
+      addToast("✅","Member Created",res.message,T.accent);
+      setShowAdd(false);fetchUsers();
+    }
+  };
+
+  if(!stats)return h("div",{style:{padding:40,textAlign:"center",color:T.textMuted}},"Loading admin panel...");
+
+  return h("div",{style:{display:"flex",flexDirection:"column",gap:16}},
+    /* Platform Stats */
+    h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12,marginBottom:8}},
+      h("div",{className:"fadeUp d1"},h(Stat,{label:"Total Users",value:stats.total_users,unit:`(${stats.active_users} active)`,icon:"👥",color:T.blue})),
+      h("div",{className:"fadeUp d2"},h(Stat,{label:"Total Appliances",value:stats.total_appliances,unit:"",icon:"🔌",color:T.accent})),
+      h("div",{className:"fadeUp d3"},h(Stat,{label:"Network Devices",value:stats.total_devices,unit:"",icon:"🌐",color:T.purple})),
+      h("div",{className:"fadeUp d4"},h(Stat,{label:"Active Automations",value:stats.total_automations,unit:"",icon:"🤖",color:T.orange}))
+    ),
+    /* Members Table */
+    h(Card,{className:"fadeUp d5"},
+      h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}},
+        h("div",{style:{fontSize:16,fontWeight:600}},"👥 Member Management"),
+        h("button",{onClick:()=>setShowAdd(true),style:{background:T.accent,color:"#111",border:"none",padding:"8px 16px",borderRadius:8,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'"}},"➕ Add Member")
+      ),
+      h("div",{style:{overflowX:"auto"}},
+        h("table",{style:{width:"100%",borderCollapse:"collapse",textAlign:"left"}},
+          h("thead",null,h("tr",{style:{borderBottom:`1px solid ${T.border}44`,color:T.textMuted,fontSize:11,textTransform:"uppercase",letterSpacing:1}},
+            h("th",{style:{padding:"12px 0",fontWeight:600}},"User"),
+            h("th",{style:{padding:"12px 0",fontWeight:600}},"Role"),
+            h("th",{style:{padding:"12px 0",fontWeight:600}},"Status"),
+            h("th",{style:{padding:"12px 0",fontWeight:600}},"Joined"),
+            h("th",{style:{padding:"12px 0",fontWeight:600,textAlign:"right"}},"Actions")
+          )),
+          h("tbody",null,
+            users.map(u=>h("tr",{key:u.id,style:{borderBottom:`1px solid ${T.border}22`}},
+              h("td",{style:{padding:"12px 0",display:"flex",alignItems:"center",gap:12}},
+                h("div",{style:{width:32,height:32,borderRadius:8,background:u.role==="admin"?T.accentDim:T.blueDim,color:u.role==="admin"?T.accent:T.blue,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14}},u.name.charAt(0).toUpperCase()),
+                h("div",null,h("div",{style:{fontSize:13,fontWeight:600}},u.name,u.id===user.id&&" (You)"),h("div",{style:{fontSize:11,color:T.textMuted}},u.email))
+              ),
+              h("td",{style:{padding:"12px 0"}},h(Badge,{text:u.role.toUpperCase(),color:u.role==="admin"?T.accent:T.blue})),
+              h("td",{style:{padding:"12px 0"}},h(Badge,{text:u.is_active?"ACTIVE":"SUSPENDED",color:u.is_active?T.accent:T.red})),
+              h("td",{style:{padding:"12px 0",fontSize:12,color:T.textMuted}},u.created_at),
+              h("td",{style:{padding:"12px 0",textAlign:"right"}},
+                h("div",{style:{display:"flex",gap:8,justifyContent:"flex-end"}},
+                  h("button",{onClick:()=>toggleRole(u),title:"Promote/Demote Role",style:{background:"transparent",border:`1px solid ${T.border}`,color:T.text,padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🛡️"),
+                  h("button",{onClick:()=>resetPassword(u),title:"Reset Password",style:{background:"transparent",border:`1px solid ${T.border}`,color:T.text,padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🔑"),
+                  h("button",{onClick:()=>deactivate(u),title:u.is_active?"Suspend user":"Activate user",style:{background:"transparent",border:`1px solid ${T.border}`,color:u.is_active?T.orange:T.accent,padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},u.is_active?"⏸":"▶"),
+                  h("button",{onClick:()=>deleteUser(u),title:"Delete entirely",style:{background:"transparent",border:`1px solid ${T.red}44`,color:T.red,padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🗑️")
+                )
+              )
+            ))
+          )
+        )
+      )
+    ),
+    /* Add Member Modal */
+    showAdd&&h("div",{style:{position:"fixed",inset:0,background:"#000c",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center"}},
+      h("div",{style:{background:T.card,border:`1px solid ${T.border}`,borderRadius:24,padding:32,width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,.5)",animation:"zoomIn .3s ease"}},
+        h("h3",{style:{margin:"0 0 20px 0",fontSize:20}},"Add New Member"),
+        h("form",{onSubmit:handleCreate,style:{display:"flex",flexDirection:"column",gap:16}},
+          h("input",{placeholder:"Full Name",name:"name",required:true,style:{padding:"12px 16px",borderRadius:12,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:14,fontFamily:"inherit"}}),
+          h("input",{type:"email",placeholder:"Email Address",name:"email",required:true,style:{padding:"12px 16px",borderRadius:12,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:14,fontFamily:"inherit"}}),
+          h("input",{type:"password",placeholder:"Temporary Password",name:"password",required:true,minLength:6,style:{padding:"12px 16px",borderRadius:12,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:14,fontFamily:"inherit"}}),
+          h("div",{style:{display:"flex",gap:20,padding:"0 4px"}},
+            h("label",{style:{fontSize:13,display:"flex",alignItems:"center",gap:6,cursor:"pointer"}},h("input",{type:"radio",name:"role",value:"user",defaultChecked:true})," Standard User"),
+            h("label",{style:{fontSize:13,display:"flex",alignItems:"center",gap:6,cursor:"pointer"}},h("input",{type:"radio",name:"role",value:"admin"})," Admin Role")
+          ),
+          h("div",{style:{display:"flex",gap:12,marginTop:10}},
+            h("button",{type:"button",onClick:()=>setShowAdd(false),style:{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.text,cursor:"pointer",fontWeight:600,fontFamily:"inherit"}},"Cancel"),
+            h("button",{type:"submit",style:{flex:1,padding:"10px",borderRadius:10,border:"none",background:T.accent,color:"#111",cursor:"pointer",fontWeight:600,fontFamily:"inherit"}},"Create Member")
+          )
+        )
+      )
+    )
+  );
+}
+
 /* ─── VOICE COMMAND HOOK ─── */
 function useVoiceCommands({appliances,setTab,toggleAppliance,addToast}){
   const [listening,setListening]=useState(false);
@@ -743,8 +864,9 @@ function GrihaNet(){
     {id:"cameras",icon:"📹",label:"Cameras"},
     {id:"alerts",icon:"🔔",label:"Alerts",count:unreadAlerts},
     {id:"automations",icon:"🤖",label:"Automations"},
-    {id:"settings",icon:"⚙️",label:"Settings"},
   ];
+  if(user?.role==="admin") tabs.push({id:"admin",icon:"🛡️",label:"Admin"});
+  tabs.push({id:"settings",icon:"⚙️",label:"Settings"});
 
   return h("div",{style:{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif"}},
     h(Toast,{toasts}),
@@ -948,6 +1070,9 @@ function GrihaNet(){
           })
         )
       ),
+
+      /* ═══ ADMIN PANEL ═══ */
+      tab==="admin"&&user?.role==="admin"&&h(AdminPanel,{user,addToast}),
 
       /* ═══ SETTINGS ═══ */
       tab==="settings"&&h(React.Fragment,null,
