@@ -62,6 +62,7 @@ def ask_question():
     # Check if a history array is sent (new frontend), otherwise fallback to single message
     history = data.get('history', [])
     message = data.get('message', '').strip()
+    live_state = data.get('live_state', '')
     
     if not message and not history:
         return jsonify({"reply": "I didn't catch that."}), 400
@@ -85,7 +86,10 @@ def ask_question():
             # Send the new message
             # If no new message is provided but history is (rare), use the last user message
             if message:
-                response = chat.send_message(message)
+                prompt = message
+                if live_state:
+                    prompt = f"[HIDDEN APP CONTEXT - User's live dashboard right now: {live_state}]\nUser Question: {message}"
+                response = chat.send_message(prompt)
                 reply = response.text
             else:
                 reply = "How can I assist you with GrihaNet today?"

@@ -594,7 +594,7 @@ function AdminPanel({user,addToast}){
 }
 
 /* ─── CHAT WIDGET ─── */
-function ChatWidget(){
+function ChatWidget({user, appliances, devices, cameras, alerts}){
   const [open,setOpen]=useState(false);
   const [msgs,setMsgs]=useState([{role:"bot",text:"Hi! I'm the GrihaNet AI assistant. How can I help you today?"}]);
   const [input,setInput]=useState("");
@@ -615,7 +615,15 @@ function ChatWidget(){
     setMsgs([...prevMsgs,{role:"user",text:userMsg}]);
     setLoading(true);
 
-    const res=await api.post("/chat/ask",{message:userMsg, history:prevMsgs});
+    const activeCams = cameras?.filter(c=>c.status==='active').length || 0;
+    const unreadAlerts = alerts?.filter(a=>!a.read).length || 0;
+    const powerKW = appliances ? (appliances.reduce((s,a)=>s+(a.on?a.watts:0),0)/1000).toFixed(2) : 0;
+    const activeAppliances = appliances ? appliances.filter(a=>a.on).length : 0;
+    const onlineDevices = devices ? devices.filter(d=>d.online).length : 0;
+    
+    const liveState = `User: ${(user&&user.name)?user.name:'Guest'} | Power: ${powerKW}kW (${activeAppliances} appliances ON) | Network: ${onlineDevices} devices online | Cameras: ${activeCams} active | Unread Alerts: ${unreadAlerts}`;
+
+    const res=await api.post("/chat/ask",{message:userMsg, history:prevMsgs, live_state:liveState});
     if(res&&res.reply) setMsgs([...prevMsgs,{role:"user",text:userMsg},{role:"bot",text:res.reply}]);
     else setMsgs([...prevMsgs,{role:"user",text:userMsg},{role:"bot",text:"Sorry, I'm offline right now."}]);
     setLoading(false);
@@ -1191,7 +1199,7 @@ function GrihaNet(){
     h("footer",{style:{padding:"16px 20px",borderTop:`1px solid ${T.border}`,textAlign:"center"}},h("span",{style:{fontSize:11,color:T.textMuted}},"GrihaNet v1.0 • Built by Team GrihaNet • VIT Vellore © 2026")),
     
     /* 💬 CHAT WIDGET */
-    h(ChatWidget, null)
+    h(ChatWidget, {user, appliances, devices, cameras, alerts})
   );
 }
 
