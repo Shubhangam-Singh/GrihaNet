@@ -593,6 +593,87 @@ function AdminPanel({user,addToast}){
   );
 }
 
+/* ─── CHAT WIDGET ─── */
+function ChatWidget(){
+  const [open,setOpen]=useState(false);
+  const [msgs,setMsgs]=useState([{role:"bot",text:"Hi! I'm the GrihaNet assistant. Ask me about power, cameras, automations, or your network."}]);
+  const [input,setInput]=useState("");
+  const [loading,setLoading]=useState(false);
+  const scrollRef=useRef(null);
+  const h=React.createElement;
+
+  useEffect(()=>{
+    if(scrollRef.current) scrollRef.current.scrollTop=scrollRef.current.scrollHeight;
+  },[msgs,open]);
+
+  const send=async(e)=>{
+    e.preventDefault();
+    if(!input.trim()||loading)return;
+    const userMsg = input.trim();
+    setInput("");
+    setMsgs(m=>[...m,{role:"user",text:userMsg}]);
+    setLoading(true);
+
+    const res=await api.post("/chat/ask",{message:userMsg});
+    if(res&&res.reply) setMsgs(m=>[...m,{role:"bot",text:res.reply}]);
+    else setMsgs(m=>[...m,{role:"bot",text:"Sorry, I'm offline right now."}]);
+    setLoading(false);
+  };
+
+  return h(React.Fragment,null,
+    /* Floating Button */
+    !open&&h("div",{onClick:()=>setOpen(true),style:{
+      position:"fixed",bottom:30,right:30,width:60,height:60,
+      borderRadius:"50%",background:T.accent,color:"#111",
+      display:"flex",alignItems:"center",justifyContent:"center",
+      fontSize:28,cursor:"pointer",boxShadow:"0 8px 32px rgba(0,0,0,.4)",
+      zIndex:999,animation:"bounceIn .5s cubic-bezier(0.175,0.885,0.32,1.275)"
+    }},"💬"),
+    /* Chat Window */
+    open&&h("div",{style:{
+      position:"fixed",bottom:30,right:30,width:340,height:500,
+      background:T.card,border:`1px solid ${T.border}`,borderRadius:20,
+      boxShadow:"0 12px 48px rgba(0,0,0,.5)",zIndex:999,
+      display:"flex",flexDirection:"column",overflow:"hidden",
+      animation:"slideUp .3s ease"
+    }},
+      /* Header */
+      h("div",{style:{background:T.surface,padding:"16px 20px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+        h("div",{style:{display:"flex",alignItems:"center",gap:10}},
+          h("div",{style:{width:10,height:10,borderRadius:"50%",background:T.accent}}),
+          h("div",{style:{fontWeight:700,fontSize:15}},"GrihaNet AI")
+        ),
+        h("div",{onClick:()=>setOpen(false),style:{cursor:"pointer",color:T.textMuted,fontSize:18}},"✖")
+      ),
+      /* Scroll Area */
+      h("div",{ref:scrollRef,style:{flex:1,padding:20,overflowY:"auto",display:"flex",flexDirection:"column",gap:16}},
+        msgs.map((m,i)=>h("div",{key:i,style:{
+          alignSelf:m.role==="user"?"flex-end":"flex-start",
+          maxWidth:"85%",padding:"12px 16px",
+          borderRadius:m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px",
+          background:m.role==="user"?T.accent:T.surface,
+          color:m.role==="user"?"#111":T.text,
+          fontSize:14,lineHeight:1.5
+        }},m.text)),
+        loading&&h("div",{style:{alignSelf:"flex-start",background:T.surface,padding:"12px 16px",borderRadius:"16px 16px 16px 4px",color:T.textMuted,fontSize:20}},"💬")
+      ),
+      /* Input Area */
+      h("form",{onSubmit:send,style:{padding:"14px",borderTop:`1px solid ${T.border}`,display:"flex",gap:10,background:T.bg}},
+        h("input",{value:input,onChange:e=>setInput(e.target.value),placeholder:"Ask me anything...",style:{
+          flex:1,padding:"12px 16px",borderRadius:24,border:`1px solid ${T.border}`,
+          background:T.surface,color:T.text,fontFamily:"inherit",fontSize:14,outline:"none"
+        }}),
+        h("button",{type:"submit",disabled:!input.trim(),style:{
+          width:42,height:42,borderRadius:"50%",border:"none",
+          background:input.trim()?T.accent:T.border,color:"#111",
+          cursor:input.trim()?"pointer":"default",display:"flex",
+          alignItems:"center",justifyContent:"center",fontSize:16,transition:"all .2s"
+        }},"↑")
+      )
+    )
+  );
+}
+
 /* ─── VOICE COMMAND HOOK ─── */
 function useVoiceCommands({appliances,setTab,toggleAppliance,addToast}){
   const [listening,setListening]=useState(false);
@@ -1102,7 +1183,10 @@ function GrihaNet(){
       )
     ),
     /* FOOTER */
-    h("footer",{style:{padding:"16px 20px",borderTop:`1px solid ${T.border}`,textAlign:"center"}},h("span",{style:{fontSize:11,color:T.textMuted}},"GrihaNet v1.0 • Built by Team GrihaNet • VIT Vellore © 2026"))
+    h("footer",{style:{padding:"16px 20px",borderTop:`1px solid ${T.border}`,textAlign:"center"}},h("span",{style:{fontSize:11,color:T.textMuted}},"GrihaNet v1.0 • Built by Team GrihaNet • VIT Vellore © 2026")),
+    
+    /* 💬 CHAT WIDGET */
+    h(ChatWidget, null)
   );
 }
 
