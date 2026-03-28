@@ -180,6 +180,114 @@ function Toast({toasts}){
   );
 }
 
+/* PDF REPORT TEMPLATE */
+function ReportTemplate({user, appliances, devices, cameras, alerts, powerData}){
+  const h = React.createElement;
+  const apps = appliances || [];
+  const devs = devices || [];
+  const cams = cameras || [];
+  const alts = alerts || [];
+  
+  const totalWatts = apps.filter(a=>a && a.on).reduce((s,a)=>s+(a.watts||0), 0);
+  const activeCams = cams.filter(c=>c && c.status==="active").length;
+  const onlineDevs = devs.filter(d=>d && d.online).length;
+
+  return h("div", {id: "pdf-report-template", style: {
+    padding: "20mm", width: "210mm", height: "auto", minHeight: "297mm", 
+    background: "#fff", color: "#111", fontFamily: "'DM Sans', sans-serif",
+    display: "block", boxSizing: "border-box"
+  }},
+    h("div", {style: {display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #00e5a0", paddingBottom: "20px", marginBottom: "30px"}},
+      h("div", null,
+        h("h1", {style: {margin: 0, color: "#00e5a0", fontSize: "28px"}}, "GrihaNet"),
+        h("p", {style: {margin: 0, color: "#666", fontSize: "14px"}}, "Unified Smart Home Monitoring")
+      ),
+      h("div", {style: {textAlign: "right"}},
+        h("h2", {style: {margin: 0, fontSize: "18px"}}, "System Usage Report"),
+        h("p", {style: {margin: 0, color: "#666", fontSize: "12px"}}, new Date().toLocaleString())
+      )
+    ),
+    h("div", {style: {display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "30px"}},
+      h("div", {style: {padding: "15px", border: "1px solid #eee", borderRadius: "10px"}},
+        h("h3", {style: {margin: "0 0 10px 0", fontSize: "14px", color: "#00e5a0"}}, "User Profile"),
+        h("p", {style: {margin: "5px 0", fontSize: "13px"}}, h("strong", null, "Name: "), user?.name || "Guest"),
+        h("p", {style: {margin: "5px 0", fontSize: "13px"}}, h("strong", null, "Email: "), user?.email || "N/A"),
+        h("p", {style: {margin: "5px 0", fontSize: "13px"}}, h("strong", null, "Role: "), user?.role || "user")
+      ),
+      h("div", {style: {padding: "15px", border: "1px solid #eee", borderRadius: "10px"}},
+        h("h3", {style: {margin: "0 0 10px 0", fontSize: "14px", color: "#00e5a0"}}, "System Health"),
+        h("p", {style: {margin: "5px 0", fontSize: "13px"}}, "Power Consumption: ", (totalWatts/1000).toFixed(2), " kW"),
+        h("p", {style: {margin: "5px 0", fontSize: "13px"}}, "Active Cameras: ", activeCams, " / ", cameras.length),
+        h("p", {style: {margin: "5px 0", fontSize: "13px"}}, "Devices Online: ", onlineDevs, " / ", devices.length)
+      )
+    ),
+    h("h3", {style: {borderBottom: "1px solid #eee", paddingBottom: "5px", fontSize: "16px"}}, "Recent Activity"),
+    h("table", {style: {width: "100%", borderCollapse: "collapse", marginTop: "10px"}},
+      h("thead", null, 
+        h("tr", {style: {background: "#f9f9f9", textAlign: "left"}},
+          ["Time", "Module", "Message"].map(t=>h("th", {key: t, style: {padding: "10px", fontSize: "12px", border: "1px solid #eee"}}, t))
+        )
+      ),
+      h("tbody", null,
+        alerts.slice(0, 10).map((a, i)=>h("tr", {key: i},
+          [a.time, a.module, a.msg].map(v=>h("td", {key: v, style: {padding: "10px", fontSize: "11px", border: "1px solid #eee"}}, v))
+        ))
+      )
+    ),
+    h("div", {style: {marginTop: "40px", paddingTop: "20px", borderTop: "1px solid #eee", textAlign: "center", fontSize: "11px", color: "#999"}},
+      "This document is an automatically generated system snapshot from GrihaNet v1.0 • VIT Vellore © 2026"
+    )
+  );
+}
+
+/* 👩‍💻 RAW LOGS TERMINAL WIDGET */
+function TerminalWidget() {
+  const h = React.createElement;
+  const [logs, setLogs] = useState([]);
+  const bottomRef = useRef(null);
+  
+  useEffect(() => {
+    const topics = ["sensor/front_door/motion", "system/heartbeat", "camera/backyard/status", "power/meter/main", "network/router/bandwidth"];
+    const actions = [`{"motion":true}`, `{"status":"ok"}`, `{"active":true}`, `{"watts":${Math.floor(Math.random()*1500+500)}}`, `{"ping":${Math.floor(Math.random()*40+10)}}`];
+    
+    // Seed initial logs
+    const initLogs = Array.from({length: 12}).map((_, i) => {
+      const t = topics[Math.floor(Math.random()*topics.length)];
+      return `[${new Date(Date.now()-(12-i)*1000).toISOString()}] MQTT: recv topic '${t}' payload=${actions[topics.indexOf(t)]||`{"status":"ok"}`}`;
+    });
+    setLogs(initLogs);
+
+    const intv = setInterval(() => {
+      const t = topics[Math.floor(Math.random()*topics.length)];
+      let act = `{"status":"ok"}`;
+      if(t.includes("power")) act = `{"watts":${Math.floor(Math.random()*2000+500)}}`;
+      else if(t.includes("motion")) act = `{"motion":${Math.random()>0.5}}`;
+      else if(t.includes("network")) act = `{"ping":${Math.floor(Math.random()*30+10)},"mbps":${(Math.random()*100+50).toFixed(1)}}`;
+      
+      const newLog = `[${new Date().toISOString()}] MQTT: recv topic '${t}' payload=${act}`;
+      setLogs(l => [...l, newLog].slice(-50));
+    }, 800 + Math.random() * 1500);
+    return () => clearInterval(intv);
+  }, []);
+
+  useEffect(() => {
+    if(bottomRef.current) bottomRef.current.scrollIntoView({behavior: "smooth"});
+  }, [logs]);
+
+  return h("div", {style: {marginTop: 24, background: "#06090f", border: `1px solid ${T.border}`, borderRadius: 10, overflow: "hidden"}},
+    h("div", {style: {background: T.surface, padding: "8px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${T.border}`}},
+      h("span", {style: {fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", color: T.textMuted, fontWeight: 600}}, "Terminal / Raw MQTT Logs"),
+      h("div", {style: {display: "flex", gap: 6}},
+        ["#ff5f56", "#ffbd2e", "#27c93f"].map(c => h("div", {key: c, style: {width: 10, height: 10, borderRadius: "50%", background: c}}))
+      )
+    ),
+    h("div", {style: {padding: "12px 16px", height: 260, overflowY: "auto", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.accent, lineHeight: 1.6, scrollBehavior: "smooth"}},
+      logs.map((l, i) => h("div", {key: i, style: {whiteSpace: "pre-wrap", wordBreak: "break-all", opacity: i === logs.length - 1 ? 1 : 0.7, marginBottom: 4}}, l)),
+      h("div", {ref: bottomRef})
+    )
+  );
+}
+
 /* Camera Feed */
 function CamFeed({cam,onToggle}){
   const isOn=cam.status==="active";
@@ -345,7 +453,7 @@ function AuthScreen({onLogin}){
           h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Full Name"),
           inp(rName,setRName,"text","e.g. Priya Sharma"),
           h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Email"),
-          inp(rEmail,setREmai,"email","you@example.com"),
+          inp(rEmail,setREmail,"email","you@example.com"),
           h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Password"),
           inp(rPass,setRPass,"password","Min. 6 characters"),
           h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Confirm Password"),
@@ -846,6 +954,62 @@ function GrihaNet(){
     if(autoData)setAutomations(autoData.automations||[]);
   },[]);
 
+  const generatePDF = () => {
+    // Isolated rendering in a temporary container
+    const container = document.createElement('div');
+    container.id = 'grihanet-pdf-container';
+    container.style.position = 'absolute';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.width = '794px'; // 210mm at 96dpi
+    container.style.opacity = '1';
+    container.style.zIndex = '10000';
+    container.style.background = '#fff';
+    container.style.overflow = 'visible';
+    document.body.appendChild(container);
+
+    const pdfName = `GrihaNet_Report_${new Date().toISOString().slice(0,10)}.pdf`;
+    const reportEl = h(ReportTemplate, {user, appliances, devices, cameras, alerts, powerData});
+    
+    ReactDOM.render(reportEl, container, () => {
+      // Delay to allow browser layout engine to catch up
+      setTimeout(() => {
+        const element = container.querySelector('#pdf-report-template');
+        console.log("PDF DEBUG - Height:", element ? element.offsetHeight : "NULL");
+        
+        if(!element || element.offsetHeight < 100) {
+          console.error("PDF ERROR: Element missing or 0 height");
+          cleanup();
+          addToast("❌", "Export Failed", "Rendering error. Refresh and try again.", T.red);
+          return;
+        }
+
+        const opt = {
+          margin: 10,
+          filename: pdfName,
+          image: { type: 'jpeg', quality: 1.0 },
+          html2canvas: { scale: 2, useCORS: true, logging: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save(pdfName).then(() => {
+          addToast("📄", "Report Ready", "Your system report has been downloaded.", T.accent);
+          cleanup();
+        }).catch(err => {
+          console.error("PDF SAVE ERROR:", err);
+          cleanup();
+        });
+      }, 1500); // 1.5s to be absolutely sure
+    });
+
+    function cleanup() {
+      try {
+        ReactDOM.unmountComponentAtNode(container);
+        document.body.removeChild(container);
+      } catch(e) {}
+    }
+  };
+
   const handleLogin=useCallback((u)=>{
     setUser(u);setLoggedIn(true);
     try{localStorage.setItem('grihanet_token',api.token);localStorage.setItem('grihanet_user',JSON.stringify(u));}catch(e){}
@@ -1174,6 +1338,11 @@ function GrihaNet(){
         h("div",{style:{display:"flex",gap:8,marginBottom:16}},["general","power","network","security"].map(t=>h("button",{key:t,onClick:()=>setSettingsTab(t),style:{padding:"8px 16px",borderRadius:8,border:"none",background:settingsTab===t?T.accentDim:T.surface,color:settingsTab===t?T.accent:T.textSec,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'",textTransform:"capitalize"}},t))),
 
         settingsTab==="general"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"General Settings"),
+          h("div",{style:{marginBottom:20,paddingBottom:16,borderBottom:`1px solid ${T.border}22`}},
+            h("div",{style:{fontSize:13,fontWeight:500,marginBottom:4}},"System Report"),
+            h("div",{style:{fontSize:11,color:T.textMuted,marginBottom:12}},"Generate a comprehensive PDF summary of your home's usage and status."),
+            h("button",{onClick:generatePDF,style:{padding:"10px 18px",borderRadius:8,background:T.accent,color:"#000",border:"none",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:8}},h("span",null,"📄"),"Download PDF Report")
+          ),
           [{key:"darkMode",label:"Dark Mode",desc:"Use dark theme across dashboard"},{key:"autoRefresh",label:"Auto-refresh Data",desc:"Refresh stats every 2.5 seconds"},{key:"pushNotifications",label:"Push Notifications",desc:"Toast notifications for critical alerts"},{key:"soundAlerts",label:"Sound Alerts",desc:"Play sound on high-severity alerts"},{key:"simulationMode",label:"Simulation Mode",desc:"Generate random motion events for demo"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:`1px solid ${T.border}22`}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:T.textMuted}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))),
 
         settingsTab==="power"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"Power Settings"),
@@ -1192,7 +1361,10 @@ function GrihaNet(){
         settingsTab==="security"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"Security Settings"),
           h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:`1px solid ${T.border}22`}},h("div",{style:{fontSize:13,fontWeight:500}},"Motion Sensitivity"),h("div",{style:{display:"flex",gap:6}},["Low","Medium","High"].map(l=>h("button",{key:l,onClick:()=>updateSetting("motionSensitivity",l),style:{padding:"6px 14px",borderRadius:8,border:`1px solid ${settings.motionSensitivity===l?T.accent+"44":T.border}`,background:settings.motionSensitivity===l?T.accentDim:T.surface,color:settings.motionSensitivity===l?T.accent:T.textSec,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'"}},l)))),
           [{key:"snapshotOnMotion",label:"Snapshot on Motion",desc:"Save image on motion"},{key:"recordClips",label:"Record Clips",desc:"15-sec clips on events"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:`1px solid ${T.border}22`}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:T.textMuted}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))
-        )
+        ),
+        
+        /* TERMINAL WIDGET */
+        h(TerminalWidget, null)
       )
     ),
     /* FOOTER */

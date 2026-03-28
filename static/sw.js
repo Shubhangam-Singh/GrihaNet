@@ -1,4 +1,4 @@
-const CACHE_NAME = 'grihanet-pwa-v8';
+const CACHE_NAME = 'grihanet-pwa-v10';
 const ASSETS_TO_CACHE = [
   '/',
   '/static/js/app.js',
@@ -9,7 +9,8 @@ const ASSETS_TO_CACHE = [
   'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/recharts/2.7.2/Recharts.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/recharts/2.7.2/Recharts.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
 ];
 
 self.addEventListener('install', (e) => {
