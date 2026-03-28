@@ -596,7 +596,7 @@ function AdminPanel({user,addToast}){
 /* ─── CHAT WIDGET ─── */
 function ChatWidget(){
   const [open,setOpen]=useState(false);
-  const [msgs,setMsgs]=useState([{role:"bot",text:"Hi! I'm the GrihaNet assistant. Ask me about power, cameras, automations, or your network."}]);
+  const [msgs,setMsgs]=useState([{role:"bot",text:"Hi! I'm the GrihaNet AI assistant. How can I help you today?"}]);
   const [input,setInput]=useState("");
   const [loading,setLoading]=useState(false);
   const scrollRef=useRef(null);
@@ -611,13 +611,18 @@ function ChatWidget(){
     if(!input.trim()||loading)return;
     const userMsg = input.trim();
     setInput("");
-    setMsgs(m=>[...m,{role:"user",text:userMsg}]);
+    const prevMsgs = [...msgs];
+    setMsgs([...prevMsgs,{role:"user",text:userMsg}]);
     setLoading(true);
 
-    const res=await api.post("/chat/ask",{message:userMsg});
-    if(res&&res.reply) setMsgs(m=>[...m,{role:"bot",text:res.reply}]);
-    else setMsgs(m=>[...m,{role:"bot",text:"Sorry, I'm offline right now."}]);
+    const res=await api.post("/chat/ask",{message:userMsg, history:prevMsgs});
+    if(res&&res.reply) setMsgs([...prevMsgs,{role:"user",text:userMsg},{role:"bot",text:res.reply}]);
+    else setMsgs([...prevMsgs,{role:"user",text:userMsg},{role:"bot",text:"Sorry, I'm offline right now."}]);
     setLoading(false);
+  };
+
+  const parseMd=txt=>{
+    return txt.split('\n').map((line,i)=>h("div",{key:i,dangerouslySetInnerHTML:{__html:line.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\*(.*?)\*/g,'<i>$1</i>')},style:{marginBottom:line?"4px":0,minHeight:line?0:"6px"}}));
   };
 
   return h(React.Fragment,null,
@@ -654,7 +659,7 @@ function ChatWidget(){
           background:m.role==="user"?T.accent:T.surface,
           color:m.role==="user"?"#111":T.text,
           fontSize:14,lineHeight:1.5
-        }},m.text)),
+        }},parseMd(m.text))),
         loading&&h("div",{style:{alignSelf:"flex-start",background:T.surface,padding:"12px 16px",borderRadius:"16px 16px 16px 4px",color:T.textMuted,fontSize:20}},"💬")
       ),
       /* Input Area */
