@@ -245,6 +245,7 @@ function TerminalWidget() {
   const h = React.createElement;
   const [logs, setLogs] = useState([]);
   const bottomRef = useRef(null);
+  const containerRef = useRef(null);
   
   useEffect(() => {
     const topics = ["sensor/front_door/motion", "system/heartbeat", "camera/backyard/status", "power/meter/main", "network/router/bandwidth"];
@@ -271,7 +272,7 @@ function TerminalWidget() {
   }, []);
 
   useEffect(() => {
-    if(bottomRef.current) bottomRef.current.scrollIntoView({behavior: "smooth"});
+    if(containerRef.current) containerRef.current.scrollTop = containerRef.current.scrollHeight;
   }, [logs]);
 
   return h("div", {style: {marginTop: 24, background: "#06090f", border: `1px solid ${T.border}`, borderRadius: 10, overflow: "hidden"}},
@@ -281,9 +282,8 @@ function TerminalWidget() {
         ["#ff5f56", "#ffbd2e", "#27c93f"].map(c => h("div", {key: c, style: {width: 10, height: 10, borderRadius: "50%", background: c}}))
       )
     ),
-    h("div", {style: {padding: "12px 16px", height: 260, overflowY: "auto", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.accent, lineHeight: 1.6, scrollBehavior: "smooth"}},
-      logs.map((l, i) => h("div", {key: i, style: {whiteSpace: "pre-wrap", wordBreak: "break-all", opacity: i === logs.length - 1 ? 1 : 0.7, marginBottom: 4}}, l)),
-      h("div", {ref: bottomRef})
+    h("div", {ref: containerRef, style: {padding: "12px 16px", height: 260, overflowY: "auto", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.accent, lineHeight: 1.6}},
+      logs.map((l, i) => h("div", {key: i, style: {whiteSpace: "pre-wrap", wordBreak: "break-all", opacity: i === logs.length - 1 ? 1 : 0.7, marginBottom: 4}}, l))
     )
   );
 }
@@ -373,7 +373,7 @@ function AuthScreen({onLogin}){
   const [pass,setPass]=useState("password123");
   // Register fields
   const [rName,setRName]=useState("");
-  const [rEmail,setREmai]=useState("");
+  const [rEmail,setREmail]=useState("");
   const [rPass,setRPass]=useState("");
   const [rConf,setRConf]=useState("");
 
@@ -954,59 +954,34 @@ function GrihaNet(){
     if(autoData)setAutomations(autoData.automations||[]);
   },[]);
 
-  const generatePDF = () => {
-    // Isolated rendering in a temporary container
-    const container = document.createElement('div');
-    container.id = 'grihanet-pdf-container';
-    container.style.position = 'absolute';
-    container.style.top = '0';
-    container.style.left = '0';
-    container.style.width = '794px'; // 210mm at 96dpi
-    container.style.opacity = '1';
-    container.style.zIndex = '10000';
-    container.style.background = '#fff';
-    container.style.overflow = 'visible';
-    document.body.appendChild(container);
-
-    const pdfName = `GrihaNet_Report_${new Date().toISOString().slice(0,10)}.pdf`;
-    const reportEl = h(ReportTemplate, {user, appliances, devices, cameras, alerts, powerData});
-    
-    ReactDOM.render(reportEl, container, () => {
-      // Delay to allow browser layout engine to catch up
-      setTimeout(() => {
-        const element = container.querySelector('#pdf-report-template');
-        console.log("PDF DEBUG - Height:", element ? element.offsetHeight : "NULL");
-        
-        if(!element || element.offsetHeight < 100) {
-          console.error("PDF ERROR: Element missing or 0 height");
-          cleanup();
-          addToast("❌", "Export Failed", "Rendering error. Refresh and try again.", T.red);
-          return;
-        }
-
-        const opt = {
-          margin: 10,
-          filename: pdfName,
-          image: { type: 'jpeg', quality: 1.0 },
-          html2canvas: { scale: 2, useCORS: true, logging: true },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().set(opt).from(element).save(pdfName).then(() => {
-          addToast("📄", "Report Ready", "Your system report has been downloaded.", T.accent);
-          cleanup();
-        }).catch(err => {
-          console.error("PDF SAVE ERROR:", err);
-          cleanup();
-        });
-      }, 1500); // 1.5s to be absolutely sure
-    });
-
-    function cleanup() {
-      try {
-        ReactDOM.unmountComponentAtNode(container);
-        document.body.removeChild(container);
-      } catch(e) {}
+  const generatePDF = async () => {
+    try {
+      addToast("⏳", "Generating", "Compiling system report... This may take a moment.", T.orange);
+      const res = await fetch('/api/settings/report.pdf', {
+        headers: { "Authorization": `Bearer ${api.token}` }
+      });
+      if (!res.ok) throw new Error("Backend failed to generate PDF. Check server logs.");
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      const contentDisp = res.headers.get("Content-Disposition");
+      let filename = `GrihaNet_Report_${new Date().toISOString().slice(0,10)}.pdf`;
+      if(contentDisp && contentDisp.includes("filename=")) {
+         filename = contentDisp.split("filename=")[1].replace(/"/g, "");
+      }
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      
+      addToast("📄", "Report Ready", "Your system report has been successfully downloaded.", T.accent);
+    } catch (e) {
+      console.error("PDF Generate Error:", e);
+      addToast("❌", "Export Error", "Failed to generate report on the server.", T.red);
     }
   };
 

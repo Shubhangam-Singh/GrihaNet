@@ -392,6 +392,8 @@ function GrihaNet(){
   const nextMotionId=useRef(100);
   const toastIdRef=useRef(0);
   const soundAlertsRef=useRef(false);
+  const activityLogRef=useRef(null);
+  const [pdfLoading,setPdfLoading]=useState(false);
   const [themeVersion,setThemeVersion]=useState(0);
   const [settings,setSettings]=useState({
     darkMode:true,autoRefresh:true,pushNotifications:true,soundAlerts:false,simulationMode:true,
@@ -520,6 +522,31 @@ function GrihaNet(){
   const toggleAutomation=async(a)=>{
     const res=await api.put("/automations/"+a.id,{enabled:!a.enabled});
     if(res&&res.automation)setAutomations(list=>list.map(x=>x.id===a.id?res.automation:x));
+  };
+
+  /* ─── Auto-scroll activity log container (not the page) ─── */
+  useEffect(()=>{
+    if(tab==="settings"&&settingsTab==="activity"&&activityLogRef.current){
+      activityLogRef.current.scrollTop=activityLogRef.current.scrollHeight;
+    }
+  },[alerts,tab,settingsTab]);
+
+  /* ─── PDF Download ─── */
+  const downloadPdf=async()=>{
+    setPdfLoading(true);
+    try{
+      const res=await fetch("/api/settings/report.pdf",{headers:{Authorization:"Bearer "+api.token}});
+      if(!res.ok)throw new Error("Failed to generate report");
+      const blob=await res.blob();
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;a.download=`GrihaNet_Report_${new Date().toISOString().slice(0,10)}.pdf`;
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      addToast("📄","Report Downloaded","PDF saved successfully",T.accent);
+    }catch(e){
+      addToast("⚠️","Download Failed",e.message,T.red);
+    }finally{setPdfLoading(false);}
   };
 
   const liveWatts=appliances.filter(a=>a.on).reduce((s,a)=>s+a.watts,0);
@@ -733,10 +760,16 @@ function GrihaNet(){
       /* ═══ SETTINGS ═══ */
       tab==="settings"&&h(React.Fragment,null,
         h("h2",{style:{fontSize:18,fontWeight:700,marginBottom:16}},"⚙️ Settings"),
-        h("div",{style:{display:"flex",gap:8,marginBottom:16}},["general","power","network","security"].map(t=>h("button",{key:t,onClick:()=>setSettingsTab(t),style:{padding:"8px 16px",borderRadius:8,border:"none",background:settingsTab===t?T.accentDim:T.surface,color:settingsTab===t?T.accent:T.textSec,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'",textTransform:"capitalize"}},t))),
+        h("div",{style:{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}},["general","power","network","security","activity"].map(t=>h("button",{key:t,onClick:()=>setSettingsTab(t),style:{padding:"8px 16px",borderRadius:8,border:"none",background:settingsTab===t?T.accentDim:T.surface,color:settingsTab===t?T.accent:T.textSec,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'",textTransform:"capitalize"}},t))),
 
         settingsTab==="general"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"General Settings"),
-          [{key:"darkMode",label:"Dark Mode",desc:"Use dark theme across dashboard"},{key:"autoRefresh",label:"Auto-refresh Data",desc:"Refresh stats every 2.5 seconds"},{key:"pushNotifications",label:"Push Notifications",desc:"Toast notifications for critical alerts"},{key:"soundAlerts",label:"Sound Alerts",desc:"Play sound on high-severity alerts"},{key:"simulationMode",label:"Simulation Mode",desc:"Generate random motion events for demo"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:`1px solid ${T.border}22`}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:T.textMuted}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))),
+          [{key:"darkMode",label:"Dark Mode",desc:"Use dark theme across dashboard"},{key:"autoRefresh",label:"Auto-refresh Data",desc:"Refresh stats every 2.5 seconds"},{key:"pushNotifications",label:"Push Notifications",desc:"Toast notifications for critical alerts"},{key:"soundAlerts",label:"Sound Alerts",desc:"Play sound on high-severity alerts"},{key:"simulationMode",label:"Simulation Mode",desc:"Generate random motion events for demo"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:`1px solid ${T.border}22`}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:T.textMuted}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])}))),
+          h("div",{style:{paddingTop:16}},
+            h("div",{style:{fontSize:13,fontWeight:500,marginBottom:6}},"System Report"),
+            h("div",{style:{fontSize:11,color:T.textMuted,marginBottom:10}},"Download a full PDF report of your home system status"),
+            h("button",{onClick:downloadPdf,disabled:pdfLoading,style:{padding:"10px 20px",borderRadius:8,border:"none",background:pdfLoading?T.border:T.gradient1,color:pdfLoading?T.textMuted:"#000",fontSize:13,fontWeight:700,cursor:pdfLoading?"default":"pointer",fontFamily:"'DM Sans'",display:"flex",alignItems:"center",gap:8}},
+              pdfLoading?"⏳ Generating...":"📄 Download PDF Report")
+          )),
 
         settingsTab==="power"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"Power Settings"),
           [{key:"rate",label:"Electricity Rate (₹/kWh)",step:.5,min:1,max:20},{key:"highUsageThreshold",label:"High Usage Alert (kW)",step:.5,min:1,max:10},{key:"runtimeAlert",label:"Runtime Alert (hours)",step:.5,min:.5,max:8},{key:"monthlyBudget",label:"Monthly Budget (₹)",step:100,min:500,max:10000}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:`1px solid ${T.border}22`}},
@@ -754,6 +787,36 @@ function GrihaNet(){
         settingsTab==="security"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"Security Settings"),
           h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:`1px solid ${T.border}22`}},h("div",{style:{fontSize:13,fontWeight:500}},"Motion Sensitivity"),h("div",{style:{display:"flex",gap:6}},["Low","Medium","High"].map(l=>h("button",{key:l,onClick:()=>updateSetting("motionSensitivity",l),style:{padding:"6px 14px",borderRadius:8,border:`1px solid ${settings.motionSensitivity===l?T.accent+"44":T.border}`,background:settings.motionSensitivity===l?T.accentDim:T.surface,color:settings.motionSensitivity===l?T.accent:T.textSec,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'"}},l)))),
           [{key:"snapshotOnMotion",label:"Snapshot on Motion",desc:"Save image on motion"},{key:"recordClips",label:"Record Clips",desc:"15-sec clips on events"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:`1px solid ${T.border}22`}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:T.textMuted}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))
+        ),
+
+        settingsTab==="activity"&&h(Card,null,
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},
+            h("div",null,
+              h("div",{style:{fontSize:14,fontWeight:600}},"Activity Log"),
+              h("div",{style:{fontSize:11,color:T.textMuted}},alerts.length+" events")
+            ),
+            h("button",{onClick:clearRead,style:{padding:"6px 14px",borderRadius:8,border:"none",background:T.surface,color:T.textSec,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'",border:`1px solid ${T.border}`}},"Clear Read")
+          ),
+          alerts.length===0
+            ?h("div",{style:{textAlign:"center",padding:"32px 0",color:T.textMuted,fontSize:13}},"No activity yet")
+            :h("div",{ref:activityLogRef,style:{maxHeight:320,overflowY:"auto",display:"flex",flexDirection:"column",gap:2}},
+              alerts.map((a,i)=>{
+                const modColor={Power:T.orange,Network:T.blue,Security:T.purple,System:T.accent}[a.module]||T.accent;
+                const typeColor={danger:T.red,warning:T.orange,info:T.blue,success:T.accent}[a.type]||T.textSec;
+                return h("div",{key:a.id,style:{display:"flex",alignItems:"flex-start",gap:10,padding:"8px 10px",borderRadius:8,background:a.read?T.surface+"88":T.surface,borderLeft:`3px solid ${typeColor}`,opacity:a.read?0.6:1}},
+                  h("span",{style:{fontSize:15,flexShrink:0}},a.icon||"📌"),
+                  h("div",{style:{flex:1,minWidth:0}},
+                    h("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:2}},
+                      h("span",{style:{fontSize:10,fontWeight:700,color:modColor,textTransform:"uppercase",letterSpacing:".5px"}},a.module),
+                      !a.read&&h("span",{style:{width:6,height:6,borderRadius:"50%",background:T.accent,display:"inline-block"}})
+                    ),
+                    h("div",{style:{fontSize:12,color:T.text,lineHeight:1.4}},a.message)
+                  ),
+                  h("span",{style:{fontSize:10,color:T.textMuted,whiteSpace:"nowrap",flexShrink:0,fontFamily:"'IBM Plex Mono'"}},
+                    a.created_at?new Date(a.created_at).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}):"")
+                );
+              })
+            )
         )
       )
     ),

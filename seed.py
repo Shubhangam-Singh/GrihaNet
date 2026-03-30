@@ -25,7 +25,6 @@ def seed_for_user(user_id):
             db.session.add(Appliance(
                 name=name, icon=icon, watts=watts, room=room, is_on=is_on, user_id=user_id
             ))
-        db.session.commit()
 
     # ─── Network Devices ───
     import random, string
@@ -48,7 +47,6 @@ def seed_for_user(user_id):
                 bandwidth_used=bw, is_online=online,
                 is_whitelisted=wl, is_blocked=blocked, user_id=user_id,
             ))
-        db.session.commit()
 
     # ─── Cameras ───
     if Camera.query.filter_by(user_id=user_id).count() == 0:
@@ -60,7 +58,6 @@ def seed_for_user(user_id):
         ]
         for name, loc, status in cams:
             db.session.add(Camera(name=name, location=loc, status=status, user_id=user_id))
-        db.session.commit()
 
     # ─── Alerts ───
     if Alert.query.filter_by(user_id=user_id).count() == 0:
@@ -77,7 +74,6 @@ def seed_for_user(user_id):
                 alert_type=atype, message=msg, icon=icon,
                 module=module, is_read=read, user_id=user_id, created_at=created,
             ))
-        db.session.commit()
 
     # ─── Settings ───
     if Settings.query.filter_by(user_id=user_id).count() == 0:
@@ -94,7 +90,8 @@ def seed_for_user(user_id):
         }
         for k, v in defaults.items():
             db.session.add(Settings(user_id=user_id, key=k, value=v))
-        db.session.commit()
+
+    db.session.commit()
 
 
 def seed_database():
