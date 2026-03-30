@@ -556,9 +556,10 @@ function AutomationModal({appliances,onClose,onCreate}){
         h("label",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"RULE NAME"),
         inp2(ruleName,setRuleName,"e.g. Night Power Saver"),
         h("div",{style:{padding:"12px 14px",borderRadius:10,background:T.surface,border:`1px solid ${T.border}`,fontSize:12,color:T.textSec}},
-          h("div",{style:{marginBottom:6}},h("strong",{style:{color:T.blue}},"IF "),"Power > "+trigParams.kw+" kW" 
-            .replace("Power > "+trigParams.kw+" kW",{power_exceeds:`Power > ${trigParams.kw} kW`,camera_detects:`Camera detects ${trigParams.event}`,time_is:`Time is ${trigParams.time}`,appliance_on:`Appliance on for ${trigParams.hours}h`}[trigType]||trigType)),
-          h("div",null,h("strong",{style:{color:T.accent}},"THEN "),actType==="create_alert"?`Alert: "${actParams.message}"`:actType==="turn_on"?"Turn ON appliance #"+actParams.appliance_id:"Turn OFF appliance #"+actParams.appliance_id)
+          h("div",{style:{marginBottom:6}},h("strong",{style:{color:T.blue}},"IF "),
+            ({power_exceeds:`Power > ${trigParams.kw} kW`,camera_detects:`Camera detects ${trigParams.event}`,time_is:`Time is ${trigParams.time}`,appliance_on:`${appliances.find(a=>String(a.id)===String(trigParams.appliance_id))?.name||"Appliance"} on for ${trigParams.hours}h`}[trigType]||trigType)
+          ),
+          h("div",null,h("strong",{style:{color:T.accent}},"THEN "),actType==="create_alert"?`Alert: "${actParams.message}"`:((actType==="turn_on"?"Turn ON ":"Turn OFF ")+(appliances.find(a=>String(a.id)===String(actParams.appliance_id))?.name||"appliance #"+actParams.appliance_id)))
         )
       ),
       h("div",{style:{display:"flex",justifyContent:"space-between",marginTop:20}},
@@ -883,6 +884,8 @@ function GrihaNet(){
       const t=localStorage.getItem('grihanet_token');
       const u=localStorage.getItem('grihanet_user');
       if(t && u){api.token=t;setUser(JSON.parse(u));setLoggedIn(true);}
+      const dm=localStorage.getItem('grihanet_darkMode');
+      if(dm!==null)setSettings(s=>({...s,darkMode:dm==='true'}));
     }catch(e){}
   },[]);
   const [tab,setTab]=useState("overview");
@@ -910,6 +913,10 @@ function GrihaNet(){
   const toastIdRef=useRef(0);
   const soundAlertsRef=useRef(false);
   const [togglingIds,setTogglingIds]=useState(new Set());
+  const [deviceSearch,setDeviceSearch]=useState("");
+  const [alertFilter,setAlertFilter]=useState("all");
+  const [showAddAppliance,setShowAddAppliance]=useState(false);
+  const [newAppl,setNewAppl]=useState({name:"",icon:"🔌",watts:"100",room:"Bedroom"});
   const [themeVersion,setThemeVersion]=useState(0);
   const [settings,setSettings]=useState({
     darkMode:true,autoRefresh:true,pushNotifications:true,soundAlerts:false,simulationMode:true,
@@ -1056,7 +1063,24 @@ function GrihaNet(){
   const updateSetting=async(key,val)=>{
     setSettings(s=>({...s,[key]:val}));
     await api.put("/settings/",{[key]:val});
+    if(key==="darkMode"){try{localStorage.setItem('grihanet_darkMode',String(val));}catch(e){}}
     addToast("⚙️","Settings Updated",key.replace(/([A-Z])/g," $1")+" changed",T.accent);
+  };
+  const addAppliance=async()=>{
+    if(!newAppl.name.trim()||!newAppl.room.trim())return;
+    const res=await api.post("/power/appliances",{...newAppl,watts:parseInt(newAppl.watts)||100});
+    if(res&&res.id){
+      setAppliances(a=>[...a,{...res,on:res.on||false}]);
+      addToast("✅","Appliance Added",res.name,T.accent);
+      setShowAddAppliance(false);
+      setNewAppl({name:"",icon:"🔌",watts:"100",room:"Bedroom"});
+    }
+  };
+  const deleteAppliance=async(id)=>{
+    const a=appliances.find(x=>x.id===id);
+    if(!a||!confirm(`Remove "${a.name}"?`))return;
+    const res=await api.del(`/power/appliances/${id}`);
+    if(res){setAppliances(prev=>prev.filter(x=>x.id!==id));addToast("🗑","Removed",a.name,T.red);}
   };
   const createAutomation=async(rule)=>{
     const res=await api.post("/automations/",rule);
@@ -1188,9 +1212,29 @@ function GrihaNet(){
           h(Card,{className:"fadeUp d3"},h("div",{style:{fontSize:14,fontWeight:600,marginBottom:14}},"📊 Weekly Consumption & Cost"),h(ResponsiveContainer,{width:"100%",height:220},h(BarChart,{data:weeklyData},h(CartesianGrid,{strokeDasharray:"3 3",stroke:T.border}),h(XAxis,{dataKey:"day",tick:{fontSize:10,fill:T.textMuted},axisLine:false}),h(YAxis,{yAxisId:"kwh",tick:{fontSize:9,fill:T.textMuted},axisLine:false}),h(YAxis,{yAxisId:"cost",orientation:"right",tick:{fontSize:9,fill:T.textMuted},axisLine:false}),h(Tooltip,{contentStyle:{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,fontSize:12}}),h(Bar,{yAxisId:"kwh",dataKey:"kwh",fill:T.blue,radius:[6,6,0,0],name:"Usage (kWh)"}),h(Bar,{yAxisId:"cost",dataKey:"cost",fill:T.accent+"66",radius:[6,6,0,0],name:"Cost (₹)"})))),
           h(Card,{className:"fadeUp d4"},h("div",{style:{fontSize:14,fontWeight:600,marginBottom:14}},"🏠 Room-wise Breakdown"),roomData.length>0?h(React.Fragment,null,h(ResponsiveContainer,{width:"100%",height:150},h(PieChart,null,h(Pie,{data:roomData,cx:"50%",cy:"50%",innerRadius:42,outerRadius:65,dataKey:"value",paddingAngle:3,strokeWidth:0},roomData.map((r,i)=>h(Cell,{key:i,fill:r.color}))),h(Tooltip,{contentStyle:{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,fontSize:12},formatter:v=>v+"W"}))),h("div",{style:{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center",marginTop:8}},roomData.map((r,i)=>h("div",{key:i,style:{display:"flex",alignItems:"center",gap:5,fontSize:10,color:T.textSec}},h("div",{style:{width:8,height:8,borderRadius:2,background:r.color}}),r.name+" ("+r.value+"W)")))):h("div",{style:{textAlign:"center",padding:30,color:T.textMuted}},"All appliances are off"))
         ),
+        showAddAppliance&&h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(6px)"}},
+          h("div",{style:{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:28,width:360,boxShadow:"0 24px 60px rgba(0,0,0,.5)"}},
+            h("h3",{style:{margin:"0 0 18px 0",fontSize:16,fontWeight:700}},"➕ Add Appliance"),
+            [["Name","name","text","e.g. Air Cooler"],["Icon (emoji)","icon","text","e.g. 🌬️"],["Watts","watts","number","e.g. 200"]].map(([label,key,type,ph])=>h(React.Fragment,{key:key},
+              h("label",{style:{fontSize:11,fontWeight:600,color:T.textSec,display:"block",marginBottom:4}},label.toUpperCase()),
+              h("input",{type,placeholder:ph,value:newAppl[key],onChange:e=>setNewAppl(p=>({...p,[key]:e.target.value})),style:{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:13,fontFamily:"'DM Sans'",outline:"none",marginBottom:12}})
+            )),
+            h("label",{style:{fontSize:11,fontWeight:600,color:T.textSec,display:"block",marginBottom:4}},"ROOM"),
+            h("select",{value:newAppl.room,onChange:e=>setNewAppl(p=>({...p,room:e.target.value})),style:{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:13,fontFamily:"'DM Sans'",marginBottom:16}},
+              ["Bedroom","Kitchen","Living Room","Bathroom","All Rooms"].map(r=>h("option",{key:r,value:r},r))
+            ),
+            h("div",{style:{display:"flex",gap:10}},
+              h("button",{onClick:()=>setShowAddAppliance(false),style:{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.text,cursor:"pointer",fontWeight:600,fontFamily:"'DM Sans'"}},"Cancel"),
+              h("button",{onClick:addAppliance,disabled:!newAppl.name.trim(),style:{flex:1,padding:"10px",borderRadius:10,border:"none",background:newAppl.name.trim()?T.gradient1:T.border,color:newAppl.name.trim()?"#000":T.textMuted,cursor:newAppl.name.trim()?"pointer":"default",fontWeight:700,fontFamily:"'DM Sans'"}},"Add Appliance")
+            )
+          )
+        ),
         h(Card,{className:"fadeUp d5"},
-          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},h("div",{style:{fontSize:14,fontWeight:600}},"🔌 Appliance Control"),h("div",{style:{fontSize:11,color:T.textSec}},appliances.filter(a=>a.on).length+"/"+appliances.length+" active")),
-          h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}},appliances.map(a=>h("div",{key:a.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:10,background:a.on?T.accent+"06":"transparent",border:`1px solid ${a.on?T.accent+"20":T.border}`,transition:"all .3s",opacity:togglingIds.has(a.id)?.6:1}},h("div",{style:{display:"flex",alignItems:"center",gap:10}},h("span",{style:{fontSize:22}},a.icon),h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},a.name),h("div",{style:{fontSize:10,color:T.textMuted}},a.room+" • "+a.watts+"W",a.on&&h("span",{style:{color:T.accent}}," • ₹"+((a.watts/1000)*settings.rate).toFixed(1)+"/hr")))),h(Toggle,{on:a.on,onToggle:()=>toggleAppliance(a.id),disabled:togglingIds.has(a.id)}))))
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},
+            h("div",null,h("div",{style:{fontSize:14,fontWeight:600}},"🔌 Appliance Control"),h("div",{style:{fontSize:11,color:T.textSec}},appliances.filter(a=>a.on).length+"/"+appliances.length+" active")),
+            h("button",{onClick:()=>setShowAddAppliance(true),style:{padding:"7px 14px",borderRadius:8,border:"none",background:T.accentDim,color:T.accent,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}},"+ Add")
+          ),
+          h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}},appliances.map(a=>h("div",{key:a.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:10,background:a.on?T.accent+"06":"transparent",border:`1px solid ${a.on?T.accent+"20":T.border}`,transition:"all .3s",opacity:togglingIds.has(a.id)?.6:1}},h("div",{style:{display:"flex",alignItems:"center",gap:10}},h("span",{style:{fontSize:22}},a.icon),h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},a.name),h("div",{style:{fontSize:10,color:T.textMuted}},a.room+" • "+a.watts+"W",a.on&&h("span",{style:{color:T.accent}}," • ₹"+((a.watts/1000)*settings.rate).toFixed(1)+"/hr")))),h("div",{style:{display:"flex",alignItems:"center",gap:8}},h(Toggle,{on:a.on,onToggle:()=>toggleAppliance(a.id),disabled:togglingIds.has(a.id)}),h("button",{onClick:()=>deleteAppliance(a.id),title:"Remove appliance",style:{background:"none",border:"none",color:T.textMuted,fontSize:13,cursor:"pointer",padding:"2px 4px",lineHeight:1,opacity:.6}},"×")))))
         )
       ),
 
@@ -1203,8 +1247,9 @@ function GrihaNet(){
         ),
         h(Card,{style:{marginBottom:14},className:"fadeUp d3"},h("div",{style:{fontSize:14,fontWeight:600,marginBottom:14}},"📊 Bandwidth History (24hr)"),h(ResponsiveContainer,{width:"100%",height:200},h(BarChart,{data:bandwidthData},h(CartesianGrid,{strokeDasharray:"3 3",stroke:T.border}),h(XAxis,{dataKey:"hour",tick:{fontSize:9,fill:T.textMuted},interval:2,axisLine:false}),h(YAxis,{tick:{fontSize:9,fill:T.textMuted},axisLine:false,unit:" GB"}),h(Tooltip,{contentStyle:{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,fontSize:12}}),h(Bar,{dataKey:"down",fill:T.blue,radius:[4,4,0,0],name:"Download"}),h(Bar,{dataKey:"up",fill:T.purple,radius:[4,4,0,0],name:"Upload"})))),
         h(Card,{className:"fadeUp d4"},
-          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},h("div",{style:{fontSize:14,fontWeight:600}},"📡 Connected Devices"),h(Badge,{text:onlineCount+" online",color:T.accent})),
-          devices.map((d,i)=>h("div",{key:d.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:i<devices.length-1?`1px solid ${T.border}22`:"none",opacity:d.online?1:.45}},
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},h("div",{style:{fontSize:14,fontWeight:600}},"📡 Connected Devices"),h(Badge,{text:onlineCount+" online",color:T.accent})),
+          h("input",{type:"text",placeholder:"Search by name, IP, or MAC…",value:deviceSearch,onChange:e=>setDeviceSearch(e.target.value),style:{width:"100%",padding:"9px 14px",borderRadius:8,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:12,fontFamily:"'DM Sans'",outline:"none",marginBottom:12}}),
+          devices.filter(d=>!deviceSearch||d.name.toLowerCase().includes(deviceSearch.toLowerCase())||d.ip.includes(deviceSearch)||d.mac.toLowerCase().includes(deviceSearch.toLowerCase())).map((d,i,arr)=>h("div",{key:d.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:i<arr.length-1?`1px solid ${T.border}22`:"none",opacity:d.online?1:.45}},
             h("div",{style:{display:"flex",alignItems:"center",gap:12,flex:1}},h("span",{style:{fontSize:24}},devIcons[d.type]),h("div",{style:{flex:1}},h("div",{style:{fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8}},d.name,!d.wl&&h(Badge,{text:"⚠ unknown",color:T.orange}),d.blocked&&h(Badge,{text:"BLOCKED",color:T.red})),h("div",{style:{fontSize:10,color:T.textMuted,fontFamily:"'IBM Plex Mono'",marginTop:2}},d.ip+" • "+d.mac),h(ProgressBar,{value:d.bw,max:20,color:d.bw>settings.bandwidthThreshold?T.orange:T.blue}))),
             h("div",{style:{display:"flex",alignItems:"center",gap:14}},h("div",{style:{textAlign:"right"}},h("div",{style:{fontSize:14,fontWeight:600,fontFamily:"'IBM Plex Mono'",color:d.online?T.blue:T.textMuted}},d.online?d.bw+" GB":"—"),h("div",{style:{fontSize:10,color:d.online?T.accent:T.red,fontWeight:600}},d.blocked?"BLOCKED":d.online?"ONLINE":"OFFLINE")),h("button",{onClick:()=>toggleDeviceBlock(d.id),style:{padding:"6px 12px",borderRadius:8,border:"none",fontSize:11,fontWeight:600,background:d.blocked?T.accentDim:T.redDim,color:d.blocked?T.accent:T.red,cursor:"pointer",fontFamily:"'DM Sans'"}},d.blocked?"Unblock":"Block"))
           ))
@@ -1244,18 +1289,26 @@ function GrihaNet(){
 
       /* ═══ ALERTS ═══ */
       tab==="alerts"&&h(React.Fragment,null,
-        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
+        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
           h("div",null,h("h2",{style:{fontSize:18,fontWeight:700,margin:0}},"🔔 Alerts"),h("p",{style:{fontSize:12,color:T.textMuted,marginTop:2}},unreadAlerts+" unread of "+alerts.length)),
           h("div",{style:{display:"flex",gap:8}},
             h("button",{onClick:markAllRead,style:{padding:"8px 16px",borderRadius:8,border:`1px solid ${T.border}`,background:"transparent",color:T.textSec,fontSize:12,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600}},"Mark all read"),
             h("button",{onClick:clearRead,style:{padding:"8px 16px",borderRadius:8,border:`1px solid ${T.red}33`,background:T.redDim,color:T.red,fontSize:12,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600}},"Clear read")
           )
         ),
-        alerts.length===0&&h(Card,null,h("div",{style:{textAlign:"center",padding:40,color:T.textMuted}},"🎉 No alerts — all clear!")),
-        alerts.map(a=>h("div",{key:a.id,style:{marginBottom:10}},h(Card,{style:{borderLeft:`4px solid ${alertColor[a.type]||T.blue}`,background:a.read?T.card:(alertColor[a.type]||T.blue)+"08",opacity:a.read?.55:1,display:"flex",justifyContent:"space-between",alignItems:"center"}},
-          h("div",{style:{flex:1}},h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:4}},h(Badge,{text:a.type,color:alertColor[a.type]||T.blue}),h(Badge,{text:a.module,color:T.textSec}),!a.read&&h("span",{style:{width:7,height:7,borderRadius:"50%",background:T.accent}})),h("div",{style:{fontSize:13,lineHeight:1.5,marginTop:4}},a.icon," ",a.msg),h("div",{style:{fontSize:10,color:T.textMuted,marginTop:6}},a.time)),
-          !a.read&&h("button",{onClick:()=>dismissAlert(a.id),style:{padding:"6px 14px",borderRadius:8,border:"none",background:T.border,color:T.textSec,fontSize:11,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600,marginLeft:12}},"Dismiss")
-        )))
+        h("div",{style:{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}},
+          [{id:"all",label:"All",color:T.textSec},{id:"unread",label:"Unread",color:T.accent},{id:"danger",label:"🔴 Danger",color:T.red},{id:"warning",label:"🟠 Warning",color:T.orange},{id:"info",label:"🔵 Info",color:T.blue},{id:"success",label:"🟢 Success",color:T.cyan}].map(f=>
+            h("button",{key:f.id,onClick:()=>setAlertFilter(f.id),style:{padding:"6px 12px",borderRadius:20,border:`1px solid ${alertFilter===f.id?f.color+"66":T.border}`,background:alertFilter===f.id?f.color+"18":"transparent",color:alertFilter===f.id?f.color:T.textSec,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'",transition:"all .2s"}},f.label)
+          )
+        ),
+        (()=>{const fa=alertFilter==="all"?alerts:alertFilter==="unread"?alerts.filter(a=>!a.read):alerts.filter(a=>a.type===alertFilter);
+        return h(React.Fragment,null,
+          fa.length===0&&h(Card,null,h("div",{style:{textAlign:"center",padding:40,color:T.textMuted}},"🎉 No alerts here!")),
+          fa.map(a=>h("div",{key:a.id,style:{marginBottom:10}},h(Card,{style:{borderLeft:`4px solid ${alertColor[a.type]||T.blue}`,background:a.read?T.card:(alertColor[a.type]||T.blue)+"08",opacity:a.read?.55:1,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+            h("div",{style:{flex:1}},h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:4}},h(Badge,{text:a.type,color:alertColor[a.type]||T.blue}),h(Badge,{text:a.module,color:T.textSec}),!a.read&&h("span",{style:{width:7,height:7,borderRadius:"50%",background:T.accent}})),h("div",{style:{fontSize:13,lineHeight:1.5,marginTop:4}},a.icon," ",a.msg),h("div",{style:{fontSize:10,color:T.textMuted,marginTop:6}},a.time)),
+            !a.read&&h("button",{onClick:()=>dismissAlert(a.id),style:{padding:"6px 14px",borderRadius:8,border:"none",background:T.border,color:T.textSec,fontSize:11,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600,marginLeft:12}},"Dismiss")
+          )))
+        );})()
       ),
 
       /* ═══ AUTOMATIONS ═══ */

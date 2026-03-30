@@ -116,6 +116,38 @@ def recommendations():
     return jsonify(recs)
 
 
+@power_bp.route("/appliances", methods=["POST"])
+@jwt_required()
+def add_appliance():
+    """Add a new appliance for current user."""
+    uid = int(get_jwt_identity())
+    data = request.get_json() or {}
+    name = data.get("name", "").strip()
+    icon = data.get("icon", "🔌").strip() or "🔌"
+    watts = max(1, int(data.get("watts", 100)))
+    room = data.get("room", "").strip()
+
+    if not name or not room:
+        return jsonify({"error": "Name and room are required"}), 400
+
+    a = Appliance(name=name, icon=icon, watts=watts, room=room, is_on=False, user_id=uid)
+    db.session.add(a)
+    db.session.commit()
+    return jsonify({"id": a.id, "name": a.name, "icon": a.icon, "watts": a.watts, "room": a.room, "on": a.is_on}), 201
+
+
+@power_bp.route("/appliances/<int:aid>", methods=["DELETE"])
+@jwt_required()
+def delete_appliance(aid):
+    """Delete an appliance (must belong to current user)."""
+    uid = int(get_jwt_identity())
+    a = Appliance.query.filter_by(id=aid, user_id=uid).first_or_404()
+    name = a.name
+    db.session.delete(a)
+    db.session.commit()
+    return jsonify({"message": f"{name} removed"})
+
+
 @power_bp.route("/summary", methods=["GET"])
 @jwt_required()
 def power_summary():
