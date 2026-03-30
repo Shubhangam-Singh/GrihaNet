@@ -168,14 +168,15 @@ function TabBtn({active,icon,label,count,onClick}){
     count!=null&&count>0&&React.createElement("span",{style:{background:T.red,color:"#fff",fontSize:9,padding:"2px 6px",borderRadius:10,fontWeight:700}},count)
   );
 }
-function Toast({toasts}){
+function Toast({toasts,onDismiss}){
   return React.createElement("div",{style:{position:"fixed",top:70,right:20,zIndex:999,display:"flex",flexDirection:"column",gap:8,maxWidth:340}},
     toasts.map(t=>React.createElement("div",{key:t.id,style:{padding:"12px 16px",borderRadius:10,background:T.surface,border:`1px solid ${t.color}44`,boxShadow:`0 8px 30px rgba(0,0,0,.4)`,animation:"slideDown .35s ease",display:"flex",alignItems:"center",gap:10}},
       React.createElement("span",{style:{fontSize:18}},t.icon),
-      React.createElement("div",null,
+      React.createElement("div",{style:{flex:1}},
         React.createElement("div",{style:{fontSize:12,fontWeight:600,color:t.color}},t.title),
         React.createElement("div",{style:{fontSize:11,color:T.textSec,marginTop:2}},t.msg)
-      )
+      ),
+      React.createElement("button",{onClick:()=>onDismiss(t.id),style:{background:"none",border:"none",color:T.textMuted,fontSize:16,cursor:"pointer",padding:"0 2px",lineHeight:1,fontFamily:"inherit"}},"×")
     ))
   );
 }
@@ -908,6 +909,7 @@ function GrihaNet(){
   const nextMotionId=useRef(100);
   const toastIdRef=useRef(0);
   const soundAlertsRef=useRef(false);
+  const [togglingIds,setTogglingIds]=useState(new Set());
   const [themeVersion,setThemeVersion]=useState(0);
   const [settings,setSettings]=useState({
     darkMode:true,autoRefresh:true,pushNotifications:true,soundAlerts:false,simulationMode:true,
@@ -935,6 +937,7 @@ function GrihaNet(){
     setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3500);
     if(soundAlertsRef.current) playAlertBeep(color===DARK.red||color===LIGHT.red||color===DARK.orange||color===LIGHT.orange);
   },[]);
+  const dismissToast=useCallback((id)=>setToasts(t=>t.filter(x=>x.id!==id)),[]);
 
   /* ─── Fetch data from backend on login ─── */
   const fetchAll=useCallback(async()=>{
@@ -1022,11 +1025,13 @@ function GrihaNet(){
   },[loggedIn,settings.simulationMode,settings.pushNotifications,addToast,fetchAll]);
 
   const toggleAppliance=async(id)=>{
+    setTogglingIds(s=>new Set([...s,id]));
     const res=await api.put(`/power/appliances/${id}/toggle`);
     if(res){
       setAppliances(a=>a.map(x=>x.id===id?{...x,on:res.on}:x));
       if(res.on&&res.watts>1000)addToast("⚡","High Power",`${res.name} ON (${res.watts}W)`,T.orange);
     }
+    setTogglingIds(s=>{const n=new Set(s);n.delete(id);return n;});
   };
   const toggleCam=async(id)=>{
     const res=await api.put(`/cameras/${id}/toggle`);
@@ -1102,7 +1107,7 @@ function GrihaNet(){
   tabs.push({id:"settings",icon:"⚙️",label:"Settings"});
 
   return h("div",{style:{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif"}},
-    h(Toast,{toasts}),
+    h(Toast,{toasts,onDismiss:dismissToast}),
     /* HEADER */
     h("header",{style:{background:T.surface+"ee",borderBottom:`1px solid ${T.border}`,padding:"12px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(16px)"}},
       h("div",{style:{display:"flex",alignItems:"center",gap:10}},
@@ -1122,6 +1127,10 @@ function GrihaNet(){
             cursor:"pointer",fontSize:16,
             animation:listening?"pulse 1.2s infinite":"none",
             transition:"all .2s"}},listening?"🔴":"🎤"),
+        h("div",{onClick:fetchAll,title:"Refresh data",
+          style:{width:34,height:34,borderRadius:"50%",background:T.surface,border:`1px solid ${T.border}`,
+            display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:15,
+            transition:"all .2s"}},"🔄"),
         h("div",{onClick:()=>{api.token=null;setLoggedIn(false);setUser(null);try{localStorage.removeItem('grihanet_token');localStorage.removeItem('grihanet_user');}catch(e){}},style:{width:34,height:34,borderRadius:"50%",background:T.redDim,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14},title:"Logout"},"🚪")
       )
     ),
@@ -1147,10 +1156,10 @@ function GrihaNet(){
       /* ═══ OVERVIEW ═══ */
       tab==="overview"&&h(React.Fragment,null,
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12,marginBottom:16}},
-          h("div",{className:"fadeUp d1"},h(Stat,{label:"Live Power Draw",value:liveKw,unit:"kW",icon:"⚡",color:parseFloat(liveKw)>settings.highUsageThreshold?T.red:T.orange,trend:{text:`${liveWatts}W from ${appliances.filter(a=>a.on).length} appliances`,good:parseFloat(liveKw)<=settings.highUsageThreshold}})),
-          h("div",{className:"fadeUp d2"},h(Stat,{label:"Today's Usage",value:todayKwh,unit:"kWh",icon:"📊",color:T.blue,sub:`Est. cost: ₹${todayCost}`})),
-          h("div",{className:"fadeUp d3"},h(Stat,{label:"Devices Online",value:onlineCount,unit:`/ ${devices.length}`,icon:"📡",color:T.purple,sub:`${totalBw} GB used today`})),
-          h("div",{className:"fadeUp d4"},h(Stat,{label:"Cameras Active",value:activeCams,unit:`/ ${cameras.length}`,icon:"📹",color:T.accent,sub:`${totalMotion} motion events`}))
+          h("div",{className:"fadeUp d1",onClick:()=>setTab("power"),title:"Go to Power",style:{cursor:"pointer"}},h(Stat,{label:"Live Power Draw",value:liveKw,unit:"kW",icon:"⚡",color:parseFloat(liveKw)>settings.highUsageThreshold?T.red:T.orange,trend:{text:`${liveWatts}W from ${appliances.filter(a=>a.on).length} appliances`,good:parseFloat(liveKw)<=settings.highUsageThreshold}})),
+          h("div",{className:"fadeUp d2",onClick:()=>setTab("power"),title:"Go to Power",style:{cursor:"pointer"}},h(Stat,{label:"Today's Usage",value:todayKwh,unit:"kWh",icon:"📊",color:T.blue,sub:`Est. cost: ₹${todayCost}`})),
+          h("div",{className:"fadeUp d3",onClick:()=>setTab("network"),title:"Go to Network",style:{cursor:"pointer"}},h(Stat,{label:"Devices Online",value:onlineCount,unit:`/ ${devices.length}`,icon:"📡",color:T.purple,sub:`${totalBw} GB used today`})),
+          h("div",{className:"fadeUp d4",onClick:()=>setTab("cameras"),title:"Go to Cameras",style:{cursor:"pointer"}},h(Stat,{label:"Cameras Active",value:activeCams,unit:`/ ${cameras.length}`,icon:"📹",color:T.accent,sub:`${totalMotion} motion events`}))
         ),
         h("div",{style:{display:"grid",gridTemplateColumns:"2fr 1fr",gap:14,marginBottom:14}},
           h(Card,{className:"fadeUp d3"},
@@ -1181,7 +1190,7 @@ function GrihaNet(){
         ),
         h(Card,{className:"fadeUp d5"},
           h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},h("div",{style:{fontSize:14,fontWeight:600}},"🔌 Appliance Control"),h("div",{style:{fontSize:11,color:T.textSec}},appliances.filter(a=>a.on).length+"/"+appliances.length+" active")),
-          h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}},appliances.map(a=>h("div",{key:a.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:10,background:a.on?T.accent+"06":"transparent",border:`1px solid ${a.on?T.accent+"20":T.border}`,transition:"all .3s"}},h("div",{style:{display:"flex",alignItems:"center",gap:10}},h("span",{style:{fontSize:22}},a.icon),h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},a.name),h("div",{style:{fontSize:10,color:T.textMuted}},a.room+" • "+a.watts+"W",a.on&&h("span",{style:{color:T.accent}}," • ₹"+((a.watts/1000)*settings.rate).toFixed(1)+"/hr")))),h(Toggle,{on:a.on,onToggle:()=>toggleAppliance(a.id)}))))
+          h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}},appliances.map(a=>h("div",{key:a.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:10,background:a.on?T.accent+"06":"transparent",border:`1px solid ${a.on?T.accent+"20":T.border}`,transition:"all .3s",opacity:togglingIds.has(a.id)?.6:1}},h("div",{style:{display:"flex",alignItems:"center",gap:10}},h("span",{style:{fontSize:22}},a.icon),h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},a.name),h("div",{style:{fontSize:10,color:T.textMuted}},a.room+" • "+a.watts+"W",a.on&&h("span",{style:{color:T.accent}}," • ₹"+((a.watts/1000)*settings.rate).toFixed(1)+"/hr")))),h(Toggle,{on:a.on,onToggle:()=>toggleAppliance(a.id),disabled:togglingIds.has(a.id)}))))
         )
       ),
 
@@ -1212,7 +1221,17 @@ function GrihaNet(){
         ),
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:12,marginBottom:14}},cameras.map(c=>h("div",{key:c.id,className:"fadeUp d"+(c.id)},h(CamFeed,{cam:c,onToggle:toggleCam})))),
         h(Card,{className:"fadeUp d5"},
-          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},h("div",{style:{fontSize:14,fontWeight:600}},"📋 Motion Event Log"),h("div",{style:{fontSize:11,color:T.textMuted}},motionLog.length+" events • Live")),
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},
+            h("div",null,h("div",{style:{fontSize:14,fontWeight:600}},"📋 Motion Event Log"),h("div",{style:{fontSize:11,color:T.textMuted}},motionLog.length+" events • Live")),
+            h("button",{onClick:async()=>{
+              const res=await api.post("/cameras/motions/simulate");
+              if(res){
+                setMotionLog(l=>[{id:++nextMotionId.current,cam:res.cam,time:res.time,type:res.type,severity:res.severity,img:res.img},...l].slice(0,20));
+                setCameras(c=>c.map(x=>x.name===res.cam?{...x,motionEvents:(x.motionEvents||0)+1}:x));
+                addToast("📹","Motion Simulated",`${res.type} at ${res.cam}`,T.orange);
+              }
+            },style:{padding:"6px 14px",borderRadius:8,border:"none",background:T.orangeDim,color:T.orange,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}},"▶ Simulate")
+          ),
           motionLog.slice(0,12).map((m,i)=>h("div",{key:m.id,style:{display:"flex",alignItems:"center",gap:14,padding:"10px 0",borderBottom:i<Math.min(motionLog.length,12)-1?`1px solid ${T.border}22`:"none"}},
             h("span",{style:{fontSize:12,fontFamily:"'IBM Plex Mono'",color:T.textMuted,minWidth:70}},m.time),
             h("span",{style:{fontSize:18}},m.img),
@@ -1313,6 +1332,14 @@ function GrihaNet(){
         h("div",{style:{display:"flex",gap:8,marginBottom:16}},["general","power","network","security"].map(t=>h("button",{key:t,onClick:()=>setSettingsTab(t),style:{padding:"8px 16px",borderRadius:8,border:"none",background:settingsTab===t?T.accentDim:T.surface,color:settingsTab===t?T.accent:T.textSec,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'",textTransform:"capitalize"}},t))),
 
         settingsTab==="general"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"General Settings"),
+          h("div",{style:{display:"flex",alignItems:"center",gap:14,padding:"14px 0",marginBottom:8,borderBottom:`1px solid ${T.border}22`}},
+            h("div",{style:{width:44,height:44,borderRadius:12,background:user.role==="admin"?T.accentDim:T.blueDim,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:user.role==="admin"?T.accent:T.blue,flexShrink:0}},user.name.charAt(0).toUpperCase()),
+            h("div",{style:{flex:1}},
+              h("div",{style:{fontSize:14,fontWeight:600,color:T.text}},user.name),
+              h("div",{style:{fontSize:11,color:T.textMuted,marginTop:1}},user.email)
+            ),
+            h(Badge,{text:user.role.toUpperCase(),color:user.role==="admin"?T.accent:T.blue})
+          ),
           h("div",{style:{marginBottom:20,paddingBottom:16,borderBottom:`1px solid ${T.border}22`}},
             h("div",{style:{fontSize:13,fontWeight:500,marginBottom:4}},"System Report"),
             h("div",{style:{fontSize:11,color:T.textMuted,marginBottom:12}},"Generate a comprehensive PDF summary of your home's usage and status."),
