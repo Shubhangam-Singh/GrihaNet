@@ -85,11 +85,13 @@ def delete_member(caller, uid):
 
     target = User.query.get_or_404(uid)
 
-    # Cascade delete all user data
+    # Cascade delete all user data in the correct FK-safe order
     Automation.query.filter_by(user_id=uid).delete()
     Alert.query.filter_by(user_id=uid).delete()
-    # Delete cameras (motion events cascade via FK)
+    # Delete motion_events before cameras (camera_id FK is NOT NULL)
+    from models import MotionEvent
     for cam in Camera.query.filter_by(user_id=uid).all():
+        MotionEvent.query.filter_by(camera_id=cam.id).delete()
         db.session.delete(cam)
     # Delete network devices
     NetworkDevice.query.filter_by(user_id=uid).delete()
@@ -109,7 +111,7 @@ def change_role(caller, uid):
         return jsonify({"error": "You cannot change your own role"}), 400
 
     target = User.query.get_or_404(uid)
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}  # silent=True: empty body → {} instead of 400
     new_role = data.get("role")
 
     if new_role not in ("admin", "user"):
