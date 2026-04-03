@@ -22,3 +22,7 @@ class Config:
     RATE_PER_KWH = 6.5
     HIGH_USAGE_THRESHOLD = 4.5  # kW
     MONTHLY_BUDGET = 2500  # INR
+
+    # Hardware device API key — set this in your .env file
+    # ESP32 must send: X-Device-Key: <this value>
+    DEVICE_API_KEY = os.environ.get("DEVICE_API_KEY", "grihanet-hw-key-change-me")

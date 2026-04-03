@@ -31,6 +31,7 @@ def create_app():
     from routes.automations import automations_bp
     from routes.admin import admin_bp
     from routes.chat import chat_bp
+    from routes.hardware import hardware_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(power_bp, url_prefix="/api/power")
@@ -41,6 +42,7 @@ def create_app():
     app.register_blueprint(automations_bp, url_prefix="/api/automations")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
     app.register_blueprint(chat_bp, url_prefix="/api/chat")
+    app.register_blueprint(hardware_bp, url_prefix="/api/hardware")
     app.register_blueprint(dashboard_bp)
 
     @app.route('/sw.js')

@@ -148,6 +148,7 @@ class Camera(db.Model):
         return {
             "id": self.id, "name": self.name, "location": self.location,
             "status": self.status, "motionEvents": events_today,
+            "streamUrl": self.stream_url or "",
         }
 
 
