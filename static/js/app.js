@@ -41,6 +41,11 @@ const api = {
     if (this.token) headers["Authorization"] = `Bearer ${this.token}`;
     try {
       const res = await fetch(`/api${path}`, { ...opts, headers });
+      if (res.status === 401) {
+        // Token expired or invalid — broadcast so the app can auto-logout
+        window.dispatchEvent(new CustomEvent("session-expired"));
+        return null;
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e) {
@@ -619,14 +624,20 @@ function AutomationModal({appliances,onClose,onCreate}){
 function AdminPanel({user,addToast}){
   const [users,setUsers]=useState([]);
   const [stats,setStats]=useState(null);
+  const [loadErr,setLoadErr]=useState(false);
   const [showAdd,setShowAdd]=useState(false);
   const h=React.createElement;
 
   const fetchUsers=useCallback(async()=>{
-    const res=await api.get("/admin/users");
-    if(res&&res.users)setUsers(res.users);
-    const s=await api.get("/admin/stats");
-    if(s)setStats(s);
+    setLoadErr(false);
+    const [res, s] = await Promise.all([
+      api.get("/admin/users"),
+      api.get("/admin/stats"),
+    ]);
+    if(res&&res.users) setUsers(res.users);
+    if(s) setStats(s);
+    // If both calls returned null the panel would freeze — show error instead
+    if(!res && !s) setLoadErr(true);
   },[]);
 
   useEffect(()=>{fetchUsers();},[fetchUsers]);
@@ -667,7 +678,14 @@ function AdminPanel({user,addToast}){
     }
   };
 
-  if(!stats)return h("div",{style:{padding:40,textAlign:"center",color:T.textMuted}},"Loading admin panel...");
+  if(loadErr)return h("div",{style:{padding:40,textAlign:"center"}},
+    h("div",{style:{fontSize:32,marginBottom:12}},"⚠️"),
+    h("div",{style:{fontSize:15,fontWeight:600,color:T.red,marginBottom:8}},"Admin Panel Unavailable"),
+    h("div",{style:{fontSize:12,color:T.textMuted,marginBottom:20}},"Your session may have expired. Please log out and log back in."),
+    h("button",{onClick:fetchUsers,style:{padding:"10px 24px",borderRadius:10,border:"none",background:T.accentDim,color:T.accent,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}},"🔄 Retry")
+  );
+  if(!stats)return h("div",{style:{padding:40,textAlign:"center",color:T.textMuted}},
+    h("div",{style:{fontSize:24,marginBottom:8}},"⏳"),"Loading admin panel...");
 
   return h("div",{style:{display:"flex",flexDirection:"column",gap:16}},
     /* Platform Stats */
@@ -911,6 +929,28 @@ function useVoiceCommands({appliances,setTab,toggleAppliance,addToast}){
 function GrihaNet(){
   const [loggedIn,setLoggedIn]=useState(false);
   const [user,setUser]=useState(null);
+
+  const doLogout=useCallback(()=>{
+    api.token=null;
+    setLoggedIn(false);
+    setUser(null);
+    try{
+      localStorage.removeItem('grihanet_token');
+      localStorage.removeItem('grihanet_user');
+    }catch(e){}
+  },[]);
+
+  // Auto-logout when any API call receives a 401 (expired token)
+  useEffect(()=>{
+    const handler=()=>{
+      doLogout();
+      // Show a toast — but addToast isn't available here yet, use a brief alert-style div approach
+      // We'll set a flag so AuthScreen can show a message
+      sessionStorage.setItem('grihanet_session_msg','Your session has expired. Please log in again.');
+    };
+    window.addEventListener('session-expired', handler);
+    return ()=>window.removeEventListener('session-expired', handler);
+  },[doLogout]);
 
   useEffect(()=>{
     try{
@@ -1192,7 +1232,7 @@ function GrihaNet(){
           style:{width:34,height:34,borderRadius:"50%",background:T.surface,border:`1px solid ${T.border}`,
             display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:15,
             transition:"all .2s"}},"🔄"),
-        h("div",{onClick:()=>{api.token=null;setLoggedIn(false);setUser(null);try{localStorage.removeItem('grihanet_token');localStorage.removeItem('grihanet_user');}catch(e){}},style:{width:34,height:34,borderRadius:"50%",background:T.redDim,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14},title:"Logout"},"🚪")
+        h("div",{onClick:doLogout,style:{width:34,height:34,borderRadius:"50%",background:T.redDim,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14},title:"Logout"},"🚪")
       )
     ),
     /* VOICE FEEDBACK OVERLAY */
