@@ -988,6 +988,7 @@ function GrihaNet(){
   const [togglingIds,setTogglingIds]=useState(new Set());
   const [deviceSearch,setDeviceSearch]=useState("");
   const [alertFilter,setAlertFilter]=useState("all");
+  const [selectedRoom,setSelectedRoom]=useState(null); // null = all rooms shown
   const [showAddAppliance,setShowAddAppliance]=useState(false);
   const [newAppl,setNewAppl]=useState({name:"",icon:"🔌",watts:"100",room:"Bedroom"});
   const [themeVersion,setThemeVersion]=useState(0);
@@ -1287,7 +1288,87 @@ function GrihaNet(){
         ),
         h("div",{style:{display:"grid",gridTemplateColumns:"1.5fr 1fr",gap:14,marginBottom:14}},
           h(Card,{className:"fadeUp d3"},h("div",{style:{fontSize:14,fontWeight:600,marginBottom:14}},"📊 Weekly Consumption & Cost"),h(ResponsiveContainer,{width:"100%",height:220},h(BarChart,{data:weeklyData},h(CartesianGrid,{strokeDasharray:"3 3",stroke:T.border}),h(XAxis,{dataKey:"day",tick:{fontSize:10,fill:T.textMuted},axisLine:false}),h(YAxis,{yAxisId:"kwh",tick:{fontSize:9,fill:T.textMuted},axisLine:false}),h(YAxis,{yAxisId:"cost",orientation:"right",tick:{fontSize:9,fill:T.textMuted},axisLine:false}),h(Tooltip,{contentStyle:{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,fontSize:12}}),h(Bar,{yAxisId:"kwh",dataKey:"kwh",fill:T.blue,radius:[6,6,0,0],name:"Usage (kWh)"}),h(Bar,{yAxisId:"cost",dataKey:"cost",fill:T.accent+"66",radius:[6,6,0,0],name:"Cost (₹)"})))),
-          h(Card,{className:"fadeUp d4"},h("div",{style:{fontSize:14,fontWeight:600,marginBottom:14}},"🏠 Room-wise Breakdown"),roomData.length>0?h(React.Fragment,null,h(ResponsiveContainer,{width:"100%",height:150},h(PieChart,null,h(Pie,{data:roomData,cx:"50%",cy:"50%",innerRadius:42,outerRadius:65,dataKey:"value",paddingAngle:3,strokeWidth:0},roomData.map((r,i)=>h(Cell,{key:i,fill:r.color}))),h(Tooltip,{contentStyle:{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,fontSize:12},formatter:v=>v+"W"}))),h("div",{style:{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center",marginTop:8}},roomData.map((r,i)=>h("div",{key:i,style:{display:"flex",alignItems:"center",gap:5,fontSize:10,color:T.textSec}},h("div",{style:{width:8,height:8,borderRadius:2,background:r.color}}),r.name+" ("+r.value+"W)")))):h("div",{style:{textAlign:"center",padding:30,color:T.textMuted}},"All appliances are off"))
+          h(Card,{className:"fadeUp d4",style:{display:"flex",flexDirection:"column"}},
+            h("div",{style:{fontSize:14,fontWeight:600,marginBottom:12}},"🏠 Room-wise Breakdown"),
+            roomData.length>0?h(React.Fragment,null,
+              /* ── Room pill selectors ── */
+              h("div",{style:{display:"flex",flexWrap:"wrap",gap:7,marginBottom:12}},
+                h("button",{
+                  onClick:()=>setSelectedRoom(null),
+                  style:{padding:"4px 12px",borderRadius:20,border:`1px solid ${!selectedRoom?T.accent+"99":T.border}`,
+                    background:!selectedRoom?T.accentDim:"transparent",
+                    color:!selectedRoom?T.accent:T.textSec,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",transition:"all .2s"}
+                },"All"),
+                roomData.map((r,i)=>h("button",{
+                  key:i,
+                  onClick:()=>setSelectedRoom(selectedRoom===r.name?null:r.name),
+                  style:{padding:"4px 12px",borderRadius:20,
+                    border:`1px solid ${selectedRoom===r.name?r.color+"99":T.border}`,
+                    background:selectedRoom===r.name?r.color+"22":"transparent",
+                    color:selectedRoom===r.name?r.color:T.text,
+                    fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",
+                    display:"flex",alignItems:"center",gap:5,transition:"all .2s"},
+                },
+                  h("span",{style:{width:8,height:8,borderRadius:"50%",background:r.color,display:"inline-block"}}),
+                  r.name
+                ))
+              ),
+              /* ── Pie chart ── */
+              h(ResponsiveContainer,{width:"100%",height:140},
+                h(PieChart,null,
+                  h(Pie,{
+                    data:roomData,cx:"50%",cy:"50%",innerRadius:38,outerRadius:60,
+                    dataKey:"value",paddingAngle:3,strokeWidth:0,
+                    onClick:(d)=>setSelectedRoom(selectedRoom===d.name?null:d.name)
+                  },
+                    roomData.map((r,i)=>h(Cell,{key:i,
+                      fill:selectedRoom&&selectedRoom!==r.name?r.color+"33":r.color,
+                      style:{cursor:"pointer",filter:selectedRoom===r.name?"drop-shadow(0 0 6px "+r.color+")":"none",
+                        transition:"all .3s"}
+                    }))
+                  ),
+                  h(Tooltip,{contentStyle:{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,fontSize:12},
+                    formatter:(v,n)=>[v+"W",n]})
+                )
+              ),
+              /* ── Stats row ── */
+              h("div",{style:{display:"flex",justifyContent:"center",gap:12,marginBottom:12,flexWrap:"wrap"}},
+                roomData
+                  .filter(r=>!selectedRoom||selectedRoom===r.name)
+                  .map((r,i)=>h("div",{key:i,style:{textAlign:"center",padding:"6px 12px",borderRadius:10,
+                    background:r.color+"15",border:`1px solid ${r.color}33`}},
+                    h("div",{style:{fontSize:16,fontWeight:800,color:r.color}},r.value+"W"),
+                    h("div",{style:{fontSize:10,color:T.text,fontWeight:600}},r.name),
+                    h("div",{style:{fontSize:10,color:T.textSec}},
+                      ((r.value/roomData.reduce((s,x)=>s+x.value,0))*100).toFixed(0)+"% of total")
+                  ))
+              ),
+              /* ── Drill-down appliance list for selected room ── */
+              selectedRoom&&h("div",{style:{borderTop:`1px solid ${T.border}33`,paddingTop:10}},
+                h("div",{style:{fontSize:11,fontWeight:700,color:T.textMuted,marginBottom:8,textTransform:"uppercase",letterSpacing:.8}},
+                  selectedRoom+" — Appliances"),
+                appliances
+                  .filter(a=>a.room===selectedRoom||(selectedRoom==="All Rooms"))
+                  .map(a=>h("div",{key:a.id,style:{
+                    display:"flex",justifyContent:"space-between",alignItems:"center",
+                    padding:"7px 0",borderBottom:`1px solid ${T.border}15`}},
+                    h("div",{style:{display:"flex",alignItems:"center",gap:8}},
+                      h("span",{style:{fontSize:16}},a.icon),
+                      h("div",null,
+                        h("div",{style:{fontSize:12,fontWeight:500,color:T.text}},a.name),
+                        h("div",{style:{fontSize:10,color:T.textMuted}},a.watts+"W")
+                      )
+                    ),
+                    h("div",{style:{display:"flex",alignItems:"center",gap:8}},
+                      h("span",{style:{fontSize:11,fontWeight:700,
+                        color:a.on?T.accent:T.textMuted}},a.on?"ON":"OFF"),
+                      a.on&&h("span",{style:{fontSize:10,color:T.accent}},
+                        "₹"+((a.watts/1000)*settings.rate).toFixed(2)+"/hr")
+                    )
+                  ))
+              )
+            ):h("div",{style:{textAlign:"center",padding:30,color:T.textMuted}},"All appliances are off")
+          )
         ),
         showAddAppliance&&h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(6px)"}},
           h("div",{style:{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:28,width:360,boxShadow:"0 24px 60px rgba(0,0,0,.5)"}},
@@ -1311,7 +1392,20 @@ function GrihaNet(){
             h("div",null,h("div",{style:{fontSize:14,fontWeight:600}},"🔌 Appliance Control"),h("div",{style:{fontSize:11,color:T.textSec}},appliances.filter(a=>a.on).length+"/"+appliances.length+" active")),
             h("button",{onClick:()=>setShowAddAppliance(true),style:{padding:"7px 14px",borderRadius:8,border:"none",background:T.accentDim,color:T.accent,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}},"+ Add")
           ),
-          h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}},appliances.map(a=>h("div",{key:a.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:10,background:a.on?T.accent+"06":"transparent",border:`1px solid ${a.on?T.accent+"20":T.border}`,transition:"all .3s",opacity:togglingIds.has(a.id)?.6:1}},h("div",{style:{display:"flex",alignItems:"center",gap:10}},h("span",{style:{fontSize:22}},a.icon),h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},a.name),h("div",{style:{fontSize:10,color:T.textMuted}},a.room+" • "+a.watts+"W",a.on&&h("span",{style:{color:T.accent}}," • ₹"+((a.watts/1000)*settings.rate).toFixed(1)+"/hr")))),h("div",{style:{display:"flex",alignItems:"center",gap:8}},h(Toggle,{on:a.on,onToggle:()=>toggleAppliance(a.id),disabled:togglingIds.has(a.id)}),h("button",{onClick:()=>deleteAppliance(a.id),title:"Remove appliance",style:{background:"none",border:"none",color:T.textMuted,fontSize:13,cursor:"pointer",padding:"2px 4px",lineHeight:1,opacity:.6}},"×")))))
+          h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}},appliances.map(a=>h("div",{key:a.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:10,background:a.on?T.accent+"08":T.surface,border:`1px solid ${a.on?T.accent+"30":T.border}`,transition:"all .3s",opacity:togglingIds.has(a.id)?.6:1}},
+            h("div",{style:{display:"flex",alignItems:"center",gap:10}},
+              h("div",{style:{width:36,height:36,borderRadius:10,background:a.on?T.accent+"20":T.border+"44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,lineHeight:1}},a.icon),
+              h("div",null,
+                h("div",{style:{fontSize:13,fontWeight:600,color:T.text}},a.name),
+                h("div",{style:{fontSize:10,color:T.textMuted}},a.room+" • "+a.watts+"W",
+                  a.on&&h("span",{style:{color:T.accent,fontWeight:600}}," • ₹"+((a.watts/1000)*settings.rate).toFixed(1)+"/hr"))
+              )
+            ),
+            h("div",{style:{display:"flex",alignItems:"center",gap:8}},
+              h(Toggle,{on:a.on,onToggle:()=>toggleAppliance(a.id),disabled:togglingIds.has(a.id)}),
+              h("button",{onClick:()=>deleteAppliance(a.id),title:"Remove appliance",style:{background:"none",border:"none",color:T.textMuted,fontSize:15,cursor:"pointer",padding:"2px 4px",lineHeight:1,opacity:.5}},"×")
+            )
+          )))
         )
       ),
 
