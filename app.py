@@ -7,9 +7,10 @@ VIT Vellore | Software Engineering Project | 2026
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from config import Config
+from config import Config, _is_readonly_fs
 from models import db
 from seed import seed_database
+import os
 
 def create_app():
     app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -68,8 +69,10 @@ def create_app():
         seed_database()
 
     # Start automation evaluation engine (background daemon thread)
-    from services.automation_engine import start_engine
-    start_engine(app)
+    # Guard: Vercel serverless functions don't support persistent threads
+    if not os.environ.get("VERCEL") and not _is_readonly_fs():
+        from services.automation_engine import start_engine
+        start_engine(app)
 
     return app
 

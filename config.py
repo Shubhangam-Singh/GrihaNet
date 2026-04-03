@@ -5,10 +5,23 @@ from datetime import timedelta
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+# Detect read-only filesystem (Vercel serverless) by attempting a write
+def _is_readonly_fs():
+    try:
+        test = os.path.join(BASE_DIR, ".writable_test")
+        with open(test, "w") as f:
+            f.write("test")
+        os.remove(test)
+        return False
+    except OSError:
+        return True
+
+_SERVERLESS = os.environ.get("VERCEL") or _is_readonly_fs()
+
 
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "grihanet-secret-key-2026")
-    _db_path = "/tmp/grihanet.db" if os.environ.get("VERCEL") else os.path.join(BASE_DIR, "grihanet.db")
+    _db_path = "/tmp/grihanet.db" if _SERVERLESS else os.path.join(BASE_DIR, "grihanet.db")
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", f"sqlite:///{_db_path}")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
