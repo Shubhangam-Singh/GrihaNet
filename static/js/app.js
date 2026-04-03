@@ -180,8 +180,8 @@ function ProgressBar({value,max,color}){
     React.createElement("div",{style:{height:"100%",width:pct+"%",background:color,borderRadius:3,transition:"width .5s"}})
   );
 }
-function TabBtn({active,icon,label,count,onClick}){
-  return React.createElement("button",{onClick,style:{padding:"10px 16px",borderRadius:10,border:"none",background:active?T.accentDim:"transparent",color:active?T.accent:T.textSec,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:7,whiteSpace:"nowrap",transition:"all .2s",fontFamily:"'DM Sans',sans-serif"}},
+function TabBtn({active,icon,label,count,onClick,tooltip}){
+  return React.createElement("button",{"data-tooltip":tooltip,onClick,style:{padding:"10px 16px",borderRadius:10,border:"none",background:active?T.accentDim:"transparent",color:active?T.accent:T.textSec,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:7,whiteSpace:"nowrap",transition:"all .2s",fontFamily:"'DM Sans',sans-serif"}},
     icon," ",label,
     count!=null&&count>0&&React.createElement("span",{style:{background:T.red,color:"#fff",fontSize:9,padding:"2px 6px",borderRadius:10,fontWeight:700}},count)
   );
@@ -1198,15 +1198,15 @@ function GrihaNet(){
   /* ─── Layout builder helpers ─── */
   const h=React.createElement;
   const tabs=[
-    {id:"overview",icon:"🏠",label:"Overview"},
-    {id:"power",icon:"⚡",label:"Power"},
-    {id:"network",icon:"🌐",label:"Network"},
-    {id:"cameras",icon:"📹",label:"Cameras"},
-    {id:"alerts",icon:"🔔",label:"Alerts",count:unreadAlerts},
-    {id:"automations",icon:"🤖",label:"Automations"},
+    {id:"overview",icon:"🏠",label:"Overview",tooltip:"Home dashboard summary"},
+    {id:"power",icon:"⚡",label:"Power",tooltip:"Manage power & appliances"},
+    {id:"network",icon:"🌐",label:"Network",tooltip:"Monitor connected devices"},
+    {id:"cameras",icon:"📹",label:"Cameras",tooltip:"Live security cameras"},
+    {id:"alerts",icon:"🔔",label:"Alerts",count:unreadAlerts,tooltip:"System notifications"},
+    {id:"automations",icon:"🤖",label:"Automations",tooltip:"Scheduled smart rules"},
   ];
-  if(user?.role==="admin") tabs.push({id:"admin",icon:"🛡️",label:"Admin"});
-  tabs.push({id:"settings",icon:"⚙️",label:"Settings"});
+  if(user?.role==="admin") tabs.push({id:"admin",icon:"🛡️",label:"Admin",tooltip:"Admin control panel"});
+  tabs.push({id:"settings",icon:"⚙️",label:"Settings",tooltip:"App preferences & reports"});
 
   return h("div",{style:{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif"}},
     h(Toast,{toasts,onDismiss:dismissToast}),
@@ -1251,17 +1251,17 @@ function GrihaNet(){
       )
     ),
     /* TABS */
-    h("nav",{style:{display:"flex",gap:4,padding:"10px 20px",overflowX:"auto"}},tabs.map(t=>h(TabBtn,{key:t.id,active:tab===t.id,icon:t.icon,label:t.label,count:t.count,onClick:()=>setTab(t.id)}))),
+    h("nav",{style:{display:"flex",gap:4,padding:"10px 20px",overflowX:"auto"}},tabs.map(t=>h(TabBtn,{key:t.id,active:tab===t.id,icon:t.icon,label:t.label,count:t.count,onClick:()=>setTab(t.id),tooltip:t.tooltip}))),
     /* CONTENT */
     h("main",{style:{padding:"16px 20px 32px",maxWidth:1200,margin:"0 auto"}},
 
       /* ═══ OVERVIEW ═══ */
       tab==="overview"&&h(React.Fragment,null,
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12,marginBottom:16}},
-          h("div",{className:"fadeUp d1",onClick:()=>setTab("power"),title:"Go to Power",style:{cursor:"pointer"}},h(Stat,{label:"Live Power Draw",value:liveKw,unit:"kW",icon:"⚡",color:parseFloat(liveKw)>settings.highUsageThreshold?T.red:T.orange,trend:{text:`${liveWatts}W from ${appliances.filter(a=>a.on).length} appliances`,good:parseFloat(liveKw)<=settings.highUsageThreshold}})),
-          h("div",{className:"fadeUp d2",onClick:()=>setTab("power"),title:"Go to Power",style:{cursor:"pointer"}},h(Stat,{label:"Today's Usage",value:todayKwh,unit:"kWh",icon:"📊",color:T.blue,sub:`Est. cost: ₹${todayCost}`})),
-          h("div",{className:"fadeUp d3",onClick:()=>setTab("network"),title:"Go to Network",style:{cursor:"pointer"}},h(Stat,{label:"Devices Online",value:onlineCount,unit:`/ ${devices.length}`,icon:"📡",color:T.purple,sub:`${totalBw} GB used today`})),
-          h("div",{className:"fadeUp d4",onClick:()=>setTab("cameras"),title:"Go to Cameras",style:{cursor:"pointer"}},h(Stat,{label:"Cameras Active",value:activeCams,unit:`/ ${cameras.length}`,icon:"📹",color:T.accent,sub:`${totalMotion} motion events`}))
+        h("div",{className:"fadeUp d1","data-tooltip":"Real-time electricity usage",onClick:()=>setTab("power"),title:"Go to Power",style:{cursor:"pointer"}},h(Stat,{label:"Live Power Draw",value:liveKw,unit:"kW",icon:"⚡",color:parseFloat(liveKw)>settings.highUsageThreshold?T.red:T.orange,trend:{text:`${liveWatts}W from ${appliances.filter(a=>a.on).length} appliances`,good:parseFloat(liveKw)<=settings.highUsageThreshold}})),
+          h("div",{className:"fadeUp d2","data-tooltip":"Total energy used today",onClick:()=>setTab("power"),title:"Go to Power",style:{cursor:"pointer"}},h(Stat,{label:"Today's Usage",value:todayKwh,unit:"kWh",icon:"📊",color:T.blue,sub:`Est. cost: ₹${todayCost}`})),
+          h("div",{className:"fadeUp d3","data-tooltip":"Devices on your network",onClick:()=>setTab("network"),title:"Go to Network",style:{cursor:"pointer"}},h(Stat,{label:"Devices Online",value:onlineCount,unit:`/ ${devices.length}`,icon:"📡",color:T.purple,sub:`${totalBw} GB used today`})),
+          h("div",{className:"fadeUp d4","data-tooltip":"Active security cameras",onClick:()=>setTab("cameras"),title:"Go to Cameras",style:{cursor:"pointer"}},h(Stat,{label:"Cameras Active",value:activeCams,unit:`/ ${cameras.length}`,icon:"📹",color:T.accent,sub:`${totalMotion} motion events`}))
         ),
         h("div",{style:{display:"grid",gridTemplateColumns:"2fr 1fr",gap:14,marginBottom:14}},
           h(Card,{className:"fadeUp d3"},
@@ -1281,10 +1281,10 @@ function GrihaNet(){
       /* ═══ POWER ═══ */
       tab==="power"&&h(React.Fragment,null,
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12,marginBottom:16}},
-          h("div",{className:"fadeUp d1"},h(Stat,{label:"Live Power",value:liveKw,unit:"kW",icon:"⚡",color:parseFloat(liveKw)>settings.highUsageThreshold?T.red:T.orange})),
-          h("div",{className:"fadeUp d2"},h(Stat,{label:"Today's Cost",value:`₹${todayCost}`,unit:"",icon:"💰",color:T.accent,sub:`@ ₹${settings.rate}/kWh`})),
-          h("div",{className:"fadeUp d3"},h(Stat,{label:"Monthly Est.",value:`₹${(todayCost*30).toLocaleString()}`,unit:"",icon:"📅",color:parseInt(todayCost)*30>settings.monthlyBudget?T.red:T.blue,sub:`Budget: ₹${settings.monthlyBudget.toLocaleString()}`})),
-          h("div",{className:"fadeUp d4"},h(Stat,{label:"Peak Today",value:Math.max(...powerData.map(d=>d.kw)).toFixed(2),unit:"kW",icon:"📈",color:T.red}))
+        h("div",{className:"fadeUp d1","data-tooltip":"Current power consumption"},h(Stat,{label:"Live Power",value:liveKw,unit:"kW",icon:"⚡",color:parseFloat(liveKw)>settings.highUsageThreshold?T.red:T.orange})),
+          h("div",{className:"fadeUp d2","data-tooltip":"Today's electricity cost"},h(Stat,{label:"Today's Cost",value:`₹${todayCost}`,unit:"",icon:"💰",color:T.accent,sub:`@ ₹${settings.rate}/kWh`})),
+          h("div",{className:"fadeUp d3","data-tooltip":"Estimated monthly electricity bill"},h(Stat,{label:"Monthly Est.",value:`₹${(todayCost*30).toLocaleString()}`,unit:"",icon:"📅",color:parseInt(todayCost)*30>settings.monthlyBudget?T.red:T.blue,sub:`Budget: ₹${settings.monthlyBudget.toLocaleString()}`})),
+          h("div",{className:"fadeUp d4","data-tooltip":"Highest usage spike today"},h(Stat,{label:"Peak Today",value:Math.max(...powerData.map(d=>d.kw)).toFixed(2),unit:"kW",icon:"📈",color:T.red}))
         ),
         h("div",{style:{display:"grid",gridTemplateColumns:"1.5fr 1fr",gap:14,marginBottom:14}},
           h(Card,{className:"fadeUp d3"},h("div",{style:{fontSize:14,fontWeight:600,marginBottom:14}},"📊 Weekly Consumption & Cost"),h(ResponsiveContainer,{width:"100%",height:220},h(BarChart,{data:weeklyData},h(CartesianGrid,{strokeDasharray:"3 3",stroke:T.border}),h(XAxis,{dataKey:"day",tick:{fontSize:10,fill:T.textMuted},axisLine:false}),h(YAxis,{yAxisId:"kwh",tick:{fontSize:9,fill:T.textMuted},axisLine:false}),h(YAxis,{yAxisId:"cost",orientation:"right",tick:{fontSize:9,fill:T.textMuted},axisLine:false}),h(Tooltip,{contentStyle:{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,fontSize:12}}),h(Bar,{yAxisId:"kwh",dataKey:"kwh",fill:T.blue,radius:[6,6,0,0],name:"Usage (kWh)"}),h(Bar,{yAxisId:"cost",dataKey:"cost",fill:T.accent+"66",radius:[6,6,0,0],name:"Cost (₹)"})))),
@@ -1390,9 +1390,9 @@ function GrihaNet(){
         h(Card,{className:"fadeUp d5"},
           h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},
             h("div",null,h("div",{style:{fontSize:14,fontWeight:600}},"🔌 Appliance Control"),h("div",{style:{fontSize:11,color:T.textSec}},appliances.filter(a=>a.on).length+"/"+appliances.length+" active")),
-            h("button",{onClick:()=>setShowAddAppliance(true),style:{padding:"7px 14px",borderRadius:8,border:"none",background:T.accentDim,color:T.accent,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}},"+ Add")
+            h("button",{"data-tooltip":"Add a new appliance",onClick:()=>setShowAddAppliance(true),style:{padding:"7px 14px",borderRadius:8,border:"none",background:T.accentDim,color:T.accent,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}},"+ Add")
           ),
-          h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}},appliances.map(a=>h("div",{key:a.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:10,background:a.on?T.accent+"08":T.surface,border:`1px solid ${a.on?T.accent+"30":T.border}`,transition:"all .3s",opacity:togglingIds.has(a.id)?.6:1}},
+          h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}},appliances.map(a=>h("div",{key:a.id,"data-tooltip":a.on?"Click toggle to turn off":"Click toggle to turn on",style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderRadius:10,background:a.on?T.accent+"08":T.surface,border:`1px solid ${a.on?T.accent+"30":T.border}`,transition:"all .3s",opacity:togglingIds.has(a.id)?.6:1}},
             h("div",{style:{display:"flex",alignItems:"center",gap:10}},
               h("div",{style:{width:36,height:36,borderRadius:10,background:a.on?T.accent+"20":T.border+"44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,lineHeight:1}},a.icon),
               h("div",null,
@@ -1422,7 +1422,7 @@ function GrihaNet(){
           h("input",{type:"text",placeholder:"Search by name, IP, or MAC…",value:deviceSearch,onChange:e=>setDeviceSearch(e.target.value),style:{width:"100%",padding:"9px 14px",borderRadius:8,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:12,fontFamily:"'DM Sans'",outline:"none",marginBottom:12}}),
           devices.filter(d=>!deviceSearch||d.name.toLowerCase().includes(deviceSearch.toLowerCase())||d.ip.includes(deviceSearch)||d.mac.toLowerCase().includes(deviceSearch.toLowerCase())).map((d,i,arr)=>h("div",{key:d.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:i<arr.length-1?`1px solid ${T.border}22`:"none",opacity:d.online?1:.45}},
             h("div",{style:{display:"flex",alignItems:"center",gap:12,flex:1}},h("span",{style:{fontSize:24}},devIcons[d.type]),h("div",{style:{flex:1}},h("div",{style:{fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8}},d.name,!d.wl&&h(Badge,{text:"⚠ unknown",color:T.orange}),d.blocked&&h(Badge,{text:"BLOCKED",color:T.red})),h("div",{style:{fontSize:10,color:T.textMuted,fontFamily:"'IBM Plex Mono'",marginTop:2}},d.ip+" • "+d.mac),h(ProgressBar,{value:d.bw,max:20,color:d.bw>settings.bandwidthThreshold?T.orange:T.blue}))),
-            h("div",{style:{display:"flex",alignItems:"center",gap:14}},h("div",{style:{textAlign:"right"}},h("div",{style:{fontSize:14,fontWeight:600,fontFamily:"'IBM Plex Mono'",color:d.online?T.blue:T.textMuted}},d.online?d.bw+" GB":"—"),h("div",{style:{fontSize:10,color:d.online?T.accent:T.red,fontWeight:600}},d.blocked?"BLOCKED":d.online?"ONLINE":"OFFLINE")),h("button",{onClick:()=>toggleDeviceBlock(d.id),style:{padding:"6px 12px",borderRadius:8,border:"none",fontSize:11,fontWeight:600,background:d.blocked?T.accentDim:T.redDim,color:d.blocked?T.accent:T.red,cursor:"pointer",fontFamily:"'DM Sans'"}},d.blocked?"Unblock":"Block"))
+            h("div",{style:{display:"flex",alignItems:"center",gap:14}},h("div",{style:{textAlign:"right"}},h("div",{style:{fontSize:14,fontWeight:600,fontFamily:"'IBM Plex Mono'",color:d.online?T.blue:T.textMuted}},d.online?d.bw+" GB":"—"),h("div",{style:{fontSize:10,color:d.online?T.accent:T.red,fontWeight:600}},d.blocked?"BLOCKED":d.online?"ONLINE":"OFFLINE")),h("button",{"data-tooltip":d.blocked?"Allow internet access":"Block from internet",onClick:()=>toggleDeviceBlock(d.id),style:{padding:"6px 12px",borderRadius:8,border:"none",fontSize:11,fontWeight:600,background:d.blocked?T.accentDim:T.redDim,color:d.blocked?T.accent:T.red,cursor:"pointer",fontFamily:"'DM Sans'"}},d.blocked?"Unblock":"Block"))
           ))
         ),
         h(SpeedTest,null)
@@ -1463,8 +1463,8 @@ function GrihaNet(){
         h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
           h("div",null,h("h2",{style:{fontSize:18,fontWeight:700,margin:0}},"🔔 Alerts"),h("p",{style:{fontSize:12,color:T.textMuted,marginTop:2}},unreadAlerts+" unread of "+alerts.length)),
           h("div",{style:{display:"flex",gap:8}},
-            h("button",{onClick:markAllRead,style:{padding:"8px 16px",borderRadius:8,border:`1px solid ${T.border}`,background:"transparent",color:T.textSec,fontSize:12,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600}},"Mark all read"),
-            h("button",{onClick:clearRead,style:{padding:"8px 16px",borderRadius:8,border:`1px solid ${T.red}33`,background:T.redDim,color:T.red,fontSize:12,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600}},"Clear read")
+            h("button",{"data-tooltip":"Mark every alert as seen",onClick:markAllRead,style:{padding:"8px 16px",borderRadius:8,border:`1px solid ${T.border}`,background:"transparent",color:T.textSec,fontSize:12,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600}},"Mark all read"),
+            h("button",{"data-tooltip":"Remove all dismissed alerts",onClick:clearRead,style:{padding:"8px 16px",borderRadius:8,border:`1px solid ${T.red}33`,background:T.redDim,color:T.red,fontSize:12,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600}},"Clear read")
           )
         ),
         h("div",{style:{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}},
@@ -1475,9 +1475,9 @@ function GrihaNet(){
         (()=>{const fa=alertFilter==="all"?alerts:alertFilter==="unread"?alerts.filter(a=>!a.read):alerts.filter(a=>a.type===alertFilter);
         return h(React.Fragment,null,
           fa.length===0&&h(Card,null,h("div",{style:{textAlign:"center",padding:40,color:T.textMuted}},"🎉 No alerts here!")),
-          fa.map(a=>h("div",{key:a.id,style:{marginBottom:10}},h(Card,{style:{borderLeft:`4px solid ${alertColor[a.type]||T.blue}`,background:a.read?T.card:(alertColor[a.type]||T.blue)+"08",opacity:a.read?.55:1,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+          fa.map(a=>h("div",{key:a.id,"data-tooltip":a.read?"Already read":"Hover to read, click Dismiss to clear",style:{marginBottom:10}},h(Card,{style:{borderLeft:`4px solid ${alertColor[a.type]||T.blue}`,background:a.read?T.card:(alertColor[a.type]||T.blue)+"08",opacity:a.read?.55:1,display:"flex",justifyContent:"space-between",alignItems:"center"}},
             h("div",{style:{flex:1}},h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:4}},h(Badge,{text:a.type,color:alertColor[a.type]||T.blue}),h(Badge,{text:a.module,color:T.textSec}),!a.read&&h("span",{style:{width:7,height:7,borderRadius:"50%",background:T.accent}})),h("div",{style:{fontSize:13,lineHeight:1.5,marginTop:4}},a.icon," ",a.msg),h("div",{style:{fontSize:10,color:T.textMuted,marginTop:6}},a.time)),
-            !a.read&&h("button",{onClick:()=>dismissAlert(a.id),style:{padding:"6px 14px",borderRadius:8,border:"none",background:T.border,color:T.textSec,fontSize:11,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600,marginLeft:12}},"Dismiss")
+            !a.read&&h("button",{"data-tooltip":"Dismiss this alert",onClick:()=>dismissAlert(a.id),style:{padding:"6px 14px",borderRadius:8,border:"none",background:T.border,color:T.textSec,fontSize:11,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600,marginLeft:12}},"Dismiss")
           )))
         );})()
       ),

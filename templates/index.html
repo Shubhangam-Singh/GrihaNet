@@ -17,11 +17,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.7.2/Recharts.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #06090f; color: #e8edf5; font-family: 'DM Sans', sans-serif; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #a0aec0; border-radius: 9px; }
-    ::-webkit-scrollbar-thumb:hover { background: #e2e8f0; }
+    html { color-scheme: dark; scrollbar-color: #a0aec0 transparent; scrollbar-width: thin; }
+    body { background: #06090f; color: #e8edf5; font-family: 'DM Sans', sans-serif;
+           scrollbar-color: #a0aec0 transparent; scrollbar-width: thin; }
+    ::-webkit-scrollbar { width: 6px !important; height: 6px !important; }
+    ::-webkit-scrollbar-track { background: transparent !important; }
+    ::-webkit-scrollbar-thumb { background: #a0aec0 !important; border-radius: 9px; }
+    ::-webkit-scrollbar-thumb:hover { background: #e2e8f0 !important; }
+    * { scrollbar-color: #a0aec0 transparent; scrollbar-width: thin; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -33,7 +36,7 @@
 <body>
   <div id="root"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script type="text/javascript" src="/static/js/app.js?v=23"></script>
+  <script type="text/javascript" src="/static/js/app.js?v=24"></script>
   <script>
     // Unregister stale service workers and clear caches to prevent black screen
     if ('serviceWorker' in navigator) {
@@ -47,6 +50,96 @@
         }).catch(err => console.log('SW registration failed: ', err));
       });
     }
+  </script>
+
+  <!-- ═══ GLOBAL TOOLTIP SYSTEM ═══ -->
+  <div id="gn-tooltip" style="
+    display:none;
+    position:fixed;
+    z-index:9999;
+    pointer-events:none;
+    background:rgba(0,0,0,0.72);
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:8px;
+    padding:6px 12px;
+    font-size:12px;
+    font-weight:500;
+    font-family:'DM Sans',sans-serif;
+    color:rgba(255,255,255,0.92);
+    white-space:nowrap;
+    max-width:220px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.5);
+    opacity:0;
+    transition:opacity 0.2s ease;
+  "></div>
+  <script>
+  (function(){
+    var tip = document.getElementById('gn-tooltip');
+    var showTimer = null;
+
+    function show(el, text) {
+      tip.textContent = text;
+      tip.style.display = 'block';
+      // Temporarily make visible off-screen to measure size
+      tip.style.opacity = '0';
+
+      var er = el.getBoundingClientRect();
+      var tw = tip.offsetWidth;
+      var th = tip.offsetHeight;
+      var GAP = 8;
+      var MARGIN = 8; // min distance from viewport edge
+
+      // Preferred: above the element
+      var top = er.top - th - GAP;
+      var above = true;
+      if (top < MARGIN) {
+        // Flip: below
+        top = er.bottom + GAP;
+        above = false;
+      }
+      // Clamp top to viewport
+      top = Math.max(MARGIN, Math.min(top, window.innerHeight - th - MARGIN));
+
+      // Horizontally: centre on element, clamp to viewport
+      var left = er.left + (er.width / 2) - (tw / 2);
+      left = Math.max(MARGIN, Math.min(left, window.innerWidth - tw - MARGIN));
+
+      tip.style.top  = top  + 'px';
+      tip.style.left = left + 'px';
+      tip.style.opacity = '1';
+    }
+
+    function hide() {
+      clearTimeout(showTimer);
+      showTimer = null;
+      tip.style.opacity = '0';
+      setTimeout(function(){ tip.style.display = 'none'; }, 200);
+    }
+
+    document.addEventListener('mouseover', function(e) {
+      var el = e.target && e.target.closest && e.target.closest('[data-tooltip]');
+      if (!el) return;
+      if (showTimer) clearTimeout(showTimer);
+      showTimer = setTimeout(function(){
+        show(el, el.getAttribute('data-tooltip'));
+      }, 4000);
+    });
+
+    document.addEventListener('mouseout', function(e) {
+      var el = e.target && e.target.closest && e.target.closest('[data-tooltip]');
+      if (!el) return;
+      // Only hide if the mouse left the element (not just moved to a child)
+      var rel = e.relatedTarget;
+      if (rel && el.contains(rel)) return;
+      hide();
+    });
+
+    // Also hide on scroll / ESC
+    document.addEventListener('scroll', hide, true);
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape') hide(); });
+  })();
   </script>
 </body>
 </html>
