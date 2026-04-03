@@ -296,9 +296,11 @@ function TerminalWidget() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Auto-scroll to bottom whenever logs update
+  // Auto-scroll to bottom whenever logs update — use scrollTop (more reliable in fixed-height containers than scrollIntoView)
   useEffect(() => {
-    if (bottomRef.current) bottomRef.current.scrollIntoView({behavior:"smooth"});
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
   }, [logs]);
 
   return h("div", {style: {marginTop: 24, background: "#06090f", border: `1px solid ${T.border}`, borderRadius: 10, overflow: "hidden"}},
@@ -998,11 +1000,16 @@ function GrihaNet(){
   const generatePDF = async () => {
     try {
       addToast("⏳", "Generating", "Compiling system report... This may take a moment.", T.orange);
+      // Fetch PDF directly with Bearer token from api.token
+      const token = api.token;
+      if (!token) { addToast("❌", "Not Logged In", "Please log in before downloading a report.", T.red); return; }
       const res = await fetch('/api/settings/report.pdf', {
-        headers: { "Authorization": `Bearer ${api.token}` }
+        headers: { "Authorization": `Bearer ${token}`, "Accept": "application/pdf" }
       });
-      if (!res.ok) throw new Error("Backend failed to generate PDF. Check server logs.");
-      
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Server error ${res.status}`);
+      }
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1011,18 +1018,17 @@ function GrihaNet(){
       const contentDisp = res.headers.get("Content-Disposition");
       let filename = `GrihaNet_Report_${new Date().toISOString().slice(0,10)}.pdf`;
       if(contentDisp && contentDisp.includes("filename=")) {
-         filename = contentDisp.split("filename=")[1].replace(/"/g, "");
+         filename = contentDisp.split("filename=")[1].replace(/"/g, "").trim();
       }
       a.download = filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
-      
-      addToast("📄", "Report Ready", "Your system report has been successfully downloaded.", T.accent);
+      addToast("📄", "Report Ready", "Your system report has been downloaded.", T.accent);
     } catch (e) {
       console.error("PDF Generate Error:", e);
-      addToast("❌", "Export Error", "Failed to generate report on the server.", T.red);
+      addToast("❌", "Export Error", e.message||"Failed to generate report on the server.", T.red);
     }
   };
 
