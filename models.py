@@ -36,6 +36,7 @@ class User(db.Model):
             "id": self.id, "email": self.email,
             "name": self.name, "role": self.role,
             "is_active": self.is_active,
+            "is_superadmin": self.id == 1,   # User #1 is the immutable GrihaNet super-admin
             "created_at": self.created_at.strftime("%d %b %Y") if self.created_at else "",
         }
 

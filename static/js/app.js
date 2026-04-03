@@ -644,20 +644,26 @@ function AdminPanel({user,addToast}){
 
   const toggleRole=async(u)=>{
     if(u.id===user.id){addToast("❌","Error","Cannot change your own role",T.red);return;}
+    if(u.is_superadmin){addToast("👑","Protected","Super Admin role cannot be changed",T.orange);return;}
     const res=await api.put(`/admin/users/${u.id}/role`);
-    if(res) { addToast("🛡️","Role Updated",res.message,T.blue); fetchUsers(); }
+    if(res&&res.message){addToast("🛡️","Role Updated",res.message,T.blue);fetchUsers();}
+    else if(res&&res.error){addToast("❌","Error",res.error,T.red);}
   };
   const deactivate=async(u)=>{
     if(u.id===user.id){addToast("❌","Error","Cannot deactivate yourself",T.red);return;}
+    if(u.is_superadmin){addToast("👑","Protected","Super Admin cannot be suspended",T.orange);return;}
     if(!confirm(`Are you sure you want to ${u.is_active?"deactivate":"activate"} ${u.name}?`))return;
     const res=await api.put(`/admin/users/${u.id}/active`);
-    if(res) { addToast("⚠️","Status Changed",res.message,T.orange); fetchUsers(); }
+    if(res&&res.message){addToast("⚠️","Status Changed",res.message,T.orange);fetchUsers();}
+    else if(res&&res.error){addToast("❌","Error",res.error,T.red);}
   };
   const deleteUser=async(u)=>{
     if(u.id===user.id){addToast("❌","Error","Cannot delete yourself",T.red);return;}
+    if(u.is_superadmin){addToast("👑","Protected","Super Admin account cannot be deleted",T.orange);return;}
     if(confirm(`WARNING: Deleting ${u.name} will erase all their devices, appliances, and data forever. Proceed?`)){
       const res=await api.del(`/admin/users/${u.id}`);
-      if(res){addToast("🗑","User Deleted",res.message,T.red);fetchUsers();}
+      if(res&&res.message){addToast("🗑","User Deleted",res.message,T.red);fetchUsers();}
+      else if(res&&res.error){addToast("❌","Error",res.error,T.red);}
     }
   };
   const resetPassword=async(u)=>{
@@ -713,19 +719,66 @@ function AdminPanel({user,addToast}){
           h("tbody",null,
             users.map(u=>h("tr",{key:u.id,style:{borderBottom:`1px solid ${T.border}22`}},
               h("td",{style:{padding:"12px 0",display:"flex",alignItems:"center",gap:12}},
-                h("div",{style:{width:32,height:32,borderRadius:8,background:u.role==="admin"?T.accentDim:T.blueDim,color:u.role==="admin"?T.accent:T.blue,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14}},u.name.charAt(0).toUpperCase()),
-                h("div",null,h("div",{style:{fontSize:13,fontWeight:600}},u.name,u.id===user.id&&" (You)"),h("div",{style:{fontSize:11,color:T.textMuted}},u.email))
+                /* Avatar — gold crown ring for super admin */
+                h("div",{style:{
+                  width:32,height:32,borderRadius:8,
+                  background:u.is_superadmin?"linear-gradient(135deg,#f59e0b,#d97706)":u.role==="admin"?T.accentDim:T.blueDim,
+                  color:u.is_superadmin?"#fff":u.role==="admin"?T.accent:T.blue,
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  fontWeight:700,fontSize:u.is_superadmin?16:14,
+                  boxShadow:u.is_superadmin?"0 0 0 2px #f59e0b, 0 0 12px #f59e0b66":"none",
+                  transition:"all .3s"
+                }},u.is_superadmin?"👑":u.name.charAt(0).toUpperCase()),
+                h("div",null,
+                  h("div",{style:{fontSize:13,fontWeight:600}},u.name,u.id===user.id&&" (You)"),
+                  h("div",{style:{fontSize:11,color:T.textMuted}},u.email)
+                )
               ),
-              h("td",{style:{padding:"12px 0"}},h(Badge,{text:u.role.toUpperCase(),color:u.role==="admin"?T.accent:T.blue})),
+              /* Role badge */
+              h("td",{style:{padding:"12px 0"}},
+                u.is_superadmin
+                  ?h("span",{style:{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:6,
+                      background:"#f59e0b22",border:"1px solid #f59e0b66",
+                      color:"#f59e0b",fontSize:10,fontWeight:700,letterSpacing:.8}},"👑 SUPER ADMIN")
+                  :h(Badge,{text:u.role.toUpperCase(),color:u.role==="admin"?T.accent:T.blue})
+              ),
               h("td",{style:{padding:"12px 0"}},h(Badge,{text:u.is_active?"ACTIVE":"SUSPENDED",color:u.is_active?T.accent:T.red})),
               h("td",{style:{padding:"12px 0",fontSize:12,color:T.textMuted}},u.created_at),
+              /* Action buttons */
               h("td",{style:{padding:"12px 0",textAlign:"right"}},
-                h("div",{style:{display:"flex",gap:8,justifyContent:"flex-end"}},
-                  h("button",{onClick:()=>toggleRole(u),title:"Promote/Demote Role",style:{background:"transparent",border:`1px solid ${T.border}`,color:T.text,padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🛡️"),
-                  h("button",{onClick:()=>resetPassword(u),title:"Reset Password",style:{background:"transparent",border:`1px solid ${T.border}`,color:T.text,padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🔑"),
-                  h("button",{onClick:()=>deactivate(u),title:u.is_active?"Suspend user":"Activate user",style:{background:"transparent",border:`1px solid ${T.border}`,color:u.is_active?T.orange:T.accent,padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},u.is_active?"⏸":"▶"),
-                  h("button",{onClick:()=>deleteUser(u),title:"Delete entirely",style:{background:"transparent",border:`1px solid ${T.red}44`,color:T.red,padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🗑️")
-                )
+                u.is_superadmin
+                  /* Super admin row — only password reset, rest locked */
+                  ?h("div",{style:{display:"flex",gap:8,justifyContent:"flex-end",alignItems:"center"}},
+                      h("span",{title:"Super Admin — protected",style:{fontSize:18,opacity:.7}},"👑"),
+                      h("button",{onClick:()=>resetPassword(u),title:"Reset Password",
+                        style:{background:"transparent",border:`1px solid ${T.border}`,color:T.text,
+                          padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🔑"),
+                      h("button",{disabled:true,title:"Cannot promote/demote Super Admin",
+                        style:{background:"transparent",border:`1px solid ${T.border}33`,color:T.textMuted,
+                          padding:"6px 10px",borderRadius:6,cursor:"not-allowed",fontSize:13,opacity:.3}},"🛡️"),
+                      h("button",{disabled:true,title:"Cannot suspend Super Admin",
+                        style:{background:"transparent",border:`1px solid ${T.border}33`,color:T.textMuted,
+                          padding:"6px 10px",borderRadius:6,cursor:"not-allowed",fontSize:13,opacity:.3}},"⏸"),
+                      h("button",{disabled:true,title:"Cannot delete Super Admin",
+                        style:{background:"transparent",border:`1px solid ${T.border}33`,color:T.textMuted,
+                          padding:"6px 10px",borderRadius:6,cursor:"not-allowed",fontSize:13,opacity:.3}},"🗑️")
+                    )
+                  /* Normal user/admin row — all actions available */
+                  :h("div",{style:{display:"flex",gap:8,justifyContent:"flex-end"}},
+                      h("button",{onClick:()=>toggleRole(u),title:"Promote/Demote Role",
+                        style:{background:"transparent",border:`1px solid ${T.border}`,color:T.text,
+                          padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🛡️"),
+                      h("button",{onClick:()=>resetPassword(u),title:"Reset Password",
+                        style:{background:"transparent",border:`1px solid ${T.border}`,color:T.text,
+                          padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🔑"),
+                      h("button",{onClick:()=>deactivate(u),title:u.is_active?"Suspend user":"Activate user",
+                        style:{background:"transparent",border:`1px solid ${T.border}`,
+                          color:u.is_active?T.orange:T.accent,padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},
+                        u.is_active?"⏸":"▶"),
+                      h("button",{onClick:()=>deleteUser(u),title:"Delete entirely",
+                        style:{background:"transparent",border:`1px solid ${T.red}44`,color:T.red,
+                          padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🗑️")
+                    )
               )
             ))
           )

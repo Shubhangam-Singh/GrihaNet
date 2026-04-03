@@ -82,6 +82,8 @@ def add_member(caller):
 def delete_member(caller, uid):
     if uid == caller.id:
         return jsonify({"error": "You cannot delete your own account"}), 400
+    if uid == 1:
+        return jsonify({"error": "The GrihaNet super admin account cannot be deleted"}), 403
 
     target = User.query.get_or_404(uid)
 
@@ -109,6 +111,8 @@ def delete_member(caller, uid):
 def change_role(caller, uid):
     if uid == caller.id:
         return jsonify({"error": "You cannot change your own role"}), 400
+    if uid == 1:
+        return jsonify({"error": "The GrihaNet super admin role cannot be changed"}), 403
 
     target = User.query.get_or_404(uid)
     data = request.get_json(silent=True) or {}  # silent=True: empty body → {} instead of 400
@@ -145,6 +149,8 @@ def reset_password(caller, uid):
 def toggle_active(caller, uid):
     if uid == caller.id:
         return jsonify({"error": "You cannot deactivate your own account"}), 400
+    if uid == 1:
+        return jsonify({"error": "The GrihaNet super admin account cannot be deactivated"}), 403
 
     target = User.query.get_or_404(uid)
     target.is_active = not target.is_active
