@@ -18,6 +18,39 @@ def get_cameras():
     return jsonify([c.to_dict() for c in cameras])
 
 
+@cameras_bp.route("/", methods=["POST"])
+@jwt_required()
+def add_camera():
+    """Add a new camera for the current user."""
+    uid = int(get_jwt_identity())
+    data = request.get_json(silent=True) or {}
+    name     = data.get("name", "").strip()
+    location = data.get("location", "").strip()
+    stream_url = data.get("stream_url", "").strip()
+
+    if not name or not location:
+        return jsonify({"error": "Camera name and location are required"}), 400
+
+    cam = Camera(name=name, location=location, stream_url=stream_url,
+                 status="active", user_id=uid)
+    db.session.add(cam)
+    db.session.commit()
+    return jsonify({"camera": cam.to_dict(), "message": f"Camera '{name}' added"}), 201
+
+
+@cameras_bp.route("/<int:cid>", methods=["DELETE"])
+@jwt_required()
+def delete_camera(cid):
+    """Delete a camera and all its motion events."""
+    uid = int(get_jwt_identity())
+    cam = Camera.query.filter_by(id=cid, user_id=uid).first_or_404()
+    # Delete FK rows first (motion_events.camera_id NOT NULL)
+    MotionEvent.query.filter_by(camera_id=cid).delete()
+    db.session.delete(cam)
+    db.session.commit()
+    return jsonify({"message": f"Camera '{cam.name}' removed"})
+
+
 @cameras_bp.route("/<int:cid>/toggle", methods=["PUT"])
 @jwt_required()
 def toggle_camera(cid):

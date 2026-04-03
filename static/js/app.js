@@ -324,36 +324,43 @@ function TerminalWidget() {
 
 
 /* Camera Feed */
-function CamFeed({cam,onToggle}){
+function CamFeed({cam,onToggle,onDelete}){
+  const h=React.createElement;
   const isOn=cam.status==="active";
   const [tick,setTick]=useState(0);
   useEffect(()=>{if(!isOn)return;const i=setInterval(()=>setTick(t=>t+1),1000);return()=>clearInterval(i);},[isOn]);
-  return React.createElement(Card,{style:{padding:0,overflow:"hidden"}},
-    React.createElement("div",{style:{height:155,background:isOn?`linear-gradient(${120+tick%60}deg,#080e1a,#101c30,#0a1422)`:"#0e0e0e",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}},
-      isOn&&React.createElement(React.Fragment,null,
-        React.createElement("div",{style:{position:"absolute",left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${T.accent}30,transparent)`,top:`${(tick*5)%100}%`,transition:"top 1s linear"}}),
-        React.createElement("div",{style:{position:"absolute",top:10,left:12,display:"flex",alignItems:"center",gap:5}},
-          React.createElement("div",{style:{width:7,height:7,borderRadius:"50%",background:T.red,animation:"pulse 1.5s infinite"}}),
-          React.createElement("span",{style:{fontSize:9,color:T.red,fontFamily:"'IBM Plex Mono'",fontWeight:700}},"REC")
+  return h(Card,{style:{padding:0,overflow:"hidden"}},
+    h("div",{style:{height:155,background:isOn?`linear-gradient(${120+tick%60}deg,#080e1a,#101c30,#0a1422)`:"#0e0e0e",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}},
+      isOn&&h(React.Fragment,null,
+        h("div",{style:{position:"absolute",left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${T.accent}30,transparent)`,top:`${(tick*5)%100}%`,transition:"top 1s linear"}}),
+        h("div",{style:{position:"absolute",top:10,left:12,display:"flex",alignItems:"center",gap:5}},
+          h("div",{style:{width:7,height:7,borderRadius:"50%",background:T.red,animation:"pulse 1.5s infinite"}}),
+          h("span",{style:{fontSize:9,color:T.red,fontFamily:"'IBM Plex Mono'",fontWeight:700}},"REC")
         ),
-        React.createElement("div",{style:{position:"absolute",top:10,right:12,fontSize:9,color:T.textMuted,fontFamily:"'IBM Plex Mono'"}},new Date().toLocaleTimeString()),
-        React.createElement("div",{style:{textAlign:"center",color:T.textSec,zIndex:2}},
-          React.createElement("div",{style:{fontSize:36,marginBottom:2}},"📹"),
-          React.createElement("div",{style:{fontSize:10,fontFamily:"'IBM Plex Mono'",letterSpacing:2}},"LIVE FEED")
+        h("div",{style:{position:"absolute",top:10,right:12,fontSize:9,color:T.textMuted,fontFamily:"'IBM Plex Mono'"}},new Date().toLocaleTimeString()),
+        h("div",{style:{textAlign:"center",color:T.textSec,zIndex:2}},
+          h("div",{style:{fontSize:36,marginBottom:2}},"📹"),
+          h("div",{style:{fontSize:10,fontFamily:"'IBM Plex Mono'",letterSpacing:2}},"LIVE FEED")
         ),
-        React.createElement("div",{style:{position:"absolute",bottom:10,left:12,fontSize:9,color:T.textMuted,fontFamily:"'IBM Plex Mono'"}},"CAM-0"+cam.id+" | "+cam.location)
+        h("div",{style:{position:"absolute",bottom:10,left:12,fontSize:9,color:T.textMuted,fontFamily:"'IBM Plex Mono'"}},"CAM-0"+cam.id+" | "+cam.location)
       ),
-      !isOn&&React.createElement("div",{style:{textAlign:"center",color:T.textMuted}},
-        React.createElement("div",{style:{fontSize:32,marginBottom:4,opacity:.4}},"📷"),
-        React.createElement("div",{style:{fontSize:10,letterSpacing:2}},"OFFLINE")
+      !isOn&&h("div",{style:{textAlign:"center",color:T.textMuted}},
+        h("div",{style:{fontSize:32,marginBottom:4,opacity:.4}},"📷"),
+        h("div",{style:{fontSize:10,letterSpacing:2}},"OFFLINE")
       )
     ),
-    React.createElement("div",{style:{padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
-      React.createElement("div",null,
-        React.createElement("div",{style:{fontSize:13,fontWeight:600,color:T.text}},cam.name),
-        React.createElement("div",{style:{fontSize:11,color:T.textMuted}},cam.motionEvents+" events today")
+    h("div",{style:{padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
+      h("div",null,
+        h("div",{style:{fontSize:13,fontWeight:600,color:T.text}},cam.name),
+        h("div",{style:{fontSize:11,color:T.textMuted}},cam.location+" • "+cam.motionEvents+" events")
       ),
-      React.createElement(Toggle,{on:isOn,onToggle:()=>onToggle(cam.id)})
+      h("div",{style:{display:"flex",gap:8,alignItems:"center"}},
+        h(Toggle,{on:isOn,onToggle:()=>onToggle(cam.id)}),
+        onDelete&&h("button",{"data-tooltip":"Remove this camera",onClick:()=>onDelete(cam),
+          style:{background:"transparent",border:`1px solid ${T.red}44`,color:T.red,
+            width:28,height:28,borderRadius:6,cursor:"pointer",fontSize:13,
+            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},"🗑️")
+      )
     )
   );
 }
@@ -1018,6 +1025,8 @@ function GrihaNet(){
   const [appliances,setAppliances]=useState(INIT_APPLIANCES);
   const [devices,setDevices]=useState(INIT_DEVICES);
   const [cameras,setCameras]=useState(INIT_CAMERAS);
+  const [showAddCamera,setShowAddCamera]=useState(false);
+  const [camForm,setCamForm]=useState({name:"",location:"",stream_url:""});
   const [motionLog,setMotionLog]=useState([
     {id:1,cam:"Front Door",time:"14:42:18",type:"Person",severity:"high",img:"👤"},
     {id:2,cam:"Front Door",time:"14:31:05",type:"Motion",severity:"medium",img:"🔵"},
@@ -1173,9 +1182,26 @@ function GrihaNet(){
   };
   const toggleCam=async(id)=>{
     const res=await api.put(`/cameras/${id}/toggle`);
-    if(res){
-      setCameras(c=>c.map(x=>x.id===id?{...x,status:res.status}:x));
-      addToast("📹","Camera "+(res.status==="active"?"Online":"Offline"),res.name,res.status==="active"?T.accent:T.red);
+    if(res) setCameras(c=>c.map(x=>x.id===id?{...x,status:res.status}:x));
+  };
+  const addCamera=async(e)=>{
+    e.preventDefault();
+    const res=await api.post("/cameras/",camForm);
+    if(res&&res.camera){
+      setCameras(c=>[...c,res.camera]);
+      addToast("📹","Camera Added",res.message,T.accent);
+      setShowAddCamera(false);
+      setCamForm({name:"",location:"",stream_url:""});
+    } else if(res&&res.error){
+      addToast("❌","Error",res.error,T.red);
+    }
+  };
+  const deleteCamera=async(cam)=>{
+    if(!confirm(`Remove camera '${cam.name}'? All motion events will be deleted.`))return;
+    const res=await api.del(`/cameras/${cam.id}`);
+    if(res&&res.message){
+      setCameras(c=>c.filter(x=>x.id!==cam.id));
+      addToast("🗑️","Camera Removed",res.message,T.red);
     }
   };
   const toggleDeviceBlock=async(id)=>{
@@ -1483,12 +1509,72 @@ function GrihaNet(){
 
       /* ═══ CAMERAS ═══ */
       tab==="cameras"&&h(React.Fragment,null,
+        /* Add Camera Modal */
+        showAddCamera&&h("div",{style:{position:"fixed",inset:0,background:"#000c",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center"}},
+          h("div",{style:{background:T.card,border:`1px solid ${T.border}`,borderRadius:24,padding:32,width:"100%",maxWidth:420,boxShadow:"0 20px 60px rgba(0,0,0,.6)",animation:"zoomIn .3s ease"}},
+            h("h3",{style:{margin:"0 0 6px",fontSize:20}},"📹 Add New Camera"),
+            h("p",{style:{margin:"0 0 20px",fontSize:12,color:T.textMuted}},"Camera will be added as active immediately"),
+            h("form",{onSubmit:addCamera,style:{display:"flex",flexDirection:"column",gap:14}},
+              h("div",null,
+                h("label",{style:{fontSize:11,fontWeight:600,color:T.textSec,display:"block",marginBottom:5}},"CAMERA NAME *"),
+                h("input",{placeholder:"e.g. Front Door, Backyard",required:true,value:camForm.name,
+                  onChange:e=>setCamForm(f=>({...f,name:e.target.value})),
+                  style:{width:"100%",padding:"11px 14px",borderRadius:10,border:`1px solid ${T.border}`,
+                    background:T.surface,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}})
+              ),
+              h("div",null,
+                h("label",{style:{fontSize:11,fontWeight:600,color:T.textSec,display:"block",marginBottom:5}},"LOCATION *"),
+                h("input",{placeholder:"e.g. Ground Floor, Gate",required:true,value:camForm.location,
+                  onChange:e=>setCamForm(f=>({...f,location:e.target.value})),
+                  style:{width:"100%",padding:"11px 14px",borderRadius:10,border:`1px solid ${T.border}`,
+                    background:T.surface,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}})
+              ),
+              h("div",null,
+                h("label",{style:{fontSize:11,fontWeight:600,color:T.textSec,display:"block",marginBottom:5}},"STREAM URL (optional)"),
+                h("input",{placeholder:"rtsp:// or http:// stream address",value:camForm.stream_url,
+                  onChange:e=>setCamForm(f=>({...f,stream_url:e.target.value})),
+                  style:{width:"100%",padding:"11px 14px",borderRadius:10,border:`1px solid ${T.border}`,
+                    background:T.surface,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}})
+              ),
+              h("div",{style:{display:"flex",gap:12,marginTop:6}},
+                h("button",{type:"button",onClick:()=>setShowAddCamera(false),
+                  style:{flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,
+                    background:"transparent",color:T.text,cursor:"pointer",fontWeight:600,fontFamily:"inherit"}},"Cancel"),
+                h("button",{type:"submit",
+                  style:{flex:1,padding:"11px",borderRadius:10,border:"none",
+                    background:T.accent,color:"#111",cursor:"pointer",fontWeight:700,fontFamily:"inherit"}},"Add Camera")
+              )
+            )
+          )
+        ),
+        /* Stat cards */
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12,marginBottom:16}},
           h("div",{className:"fadeUp d1"},h(Stat,{label:"Active Cameras",value:activeCams,unit:`/ ${cameras.length}`,icon:"📹",color:T.accent})),
           h("div",{className:"fadeUp d2"},h(Stat,{label:"Motion Events",value:totalMotion,unit:"today",icon:"🔍",color:T.orange})),
           h("div",{className:"fadeUp d3"},h(Stat,{label:"Persons Detected",value:motionLog.filter(m=>m.type==="Person").length,unit:"today",icon:"👤",color:T.red}))
         ),
-        h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:12,marginBottom:14}},cameras.map(c=>h("div",{key:c.id,className:"fadeUp d"+(c.id)},h(CamFeed,{cam:c,onToggle:toggleCam})))),
+        /* Camera grid header */
+        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+          h("div",{style:{fontSize:14,fontWeight:600}},"📷 Camera Feeds ",h("span",{style:{fontSize:11,color:T.textMuted,fontWeight:400}},`(${cameras.length} cameras)`)),
+          h("button",{"data-tooltip":"Add a new camera",onClick:()=>setShowAddCamera(true),
+            style:{padding:"7px 16px",borderRadius:8,border:"none",background:T.accentDim,
+              color:T.accent,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",
+              display:"flex",alignItems:"center",gap:6}},"📹 + Add Camera")
+        ),
+        /* Camera cards */
+        cameras.length===0
+          ?h(Card,{style:{textAlign:"center",padding:40,color:T.textMuted}},
+              h("div",{style:{fontSize:40,marginBottom:12}},"📷"),
+              h("div",{style:{fontSize:14,fontWeight:600,marginBottom:8}},"No cameras yet"),
+              h("div",{style:{fontSize:12,marginBottom:20}},"Add your first camera to start monitoring"),
+              h("button",{onClick:()=>setShowAddCamera(true),
+                style:{padding:"10px 24px",borderRadius:10,border:"none",background:T.accent,
+                  color:"#111",fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}},"+ Add Camera")
+            )
+          :h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:12,marginBottom:14}},
+              cameras.map(c=>h("div",{key:c.id,className:"fadeUp d"+(c.id%6+1)},h(CamFeed,{cam:c,onToggle:toggleCam,onDelete:deleteCamera})))
+            ),
+        /* Motion log */
         h(Card,{className:"fadeUp d5"},
           h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},
             h("div",null,h("div",{style:{fontSize:14,fontWeight:600}},"📋 Motion Event Log"),h("div",{style:{fontSize:11,color:T.textMuted}},motionLog.length+" events • Live")),
