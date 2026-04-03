@@ -292,20 +292,11 @@ function TerminalWidget() {
 /* Camera Feed */
 function CamFeed({cam,onToggle}){
   const isOn=cam.status==="active";
-  const hasStream=!!(cam.streamUrl&&cam.streamUrl.length>4);
   const [tick,setTick]=useState(0);
-  const [streamErr,setStreamErr]=useState(false);
-  useEffect(()=>{if(!isOn||hasStream)return;const i=setInterval(()=>setTick(t=>t+1),1000);return()=>clearInterval(i);},[isOn,hasStream]);
+  useEffect(()=>{if(!isOn)return;const i=setInterval(()=>setTick(t=>t+1),1000);return()=>clearInterval(i);},[isOn]);
   return React.createElement(Card,{style:{padding:0,overflow:"hidden"}},
     React.createElement("div",{style:{height:155,background:isOn?`linear-gradient(${120+tick%60}deg,#080e1a,#101c30,#0a1422)`:"#0e0e0e",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}},
-      /* Real MJPEG stream from ESP32-CAM when streamUrl is set */
-      isOn&&hasStream&&!streamErr&&React.createElement("img",{src:cam.streamUrl,onError:()=>setStreamErr(true),style:{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0}}),
-      isOn&&hasStream&&!streamErr&&React.createElement("div",{style:{position:"absolute",top:10,left:12,display:"flex",alignItems:"center",gap:5,zIndex:2}},
-        React.createElement("div",{style:{width:7,height:7,borderRadius:"50%",background:"#ff2222",animation:"pulse 1.5s infinite"}}),
-        React.createElement("span",{style:{fontSize:9,color:"#ff4444",fontFamily:"'IBM Plex Mono'",fontWeight:700,textShadow:"0 0 4px #000"}},"LIVE")
-      ),
-      /* Simulated feed when no real stream */
-      isOn&&(!hasStream||streamErr)&&React.createElement(React.Fragment,null,
+      isOn&&React.createElement(React.Fragment,null,
         React.createElement("div",{style:{position:"absolute",left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${T.accent}30,transparent)`,top:`${(tick*5)%100}%`,transition:"top 1s linear"}}),
         React.createElement("div",{style:{position:"absolute",top:10,left:12,display:"flex",alignItems:"center",gap:5}},
           React.createElement("div",{style:{width:7,height:7,borderRadius:"50%",background:T.red,animation:"pulse 1.5s infinite"}}),
@@ -314,7 +305,7 @@ function CamFeed({cam,onToggle}){
         React.createElement("div",{style:{position:"absolute",top:10,right:12,fontSize:9,color:T.textMuted,fontFamily:"'IBM Plex Mono'"}},new Date().toLocaleTimeString()),
         React.createElement("div",{style:{textAlign:"center",color:T.textSec,zIndex:2}},
           React.createElement("div",{style:{fontSize:36,marginBottom:2}},"📹"),
-          React.createElement("div",{style:{fontSize:10,fontFamily:"'IBM Plex Mono'",letterSpacing:2}},streamErr?"STREAM ERR":"LIVE FEED")
+          React.createElement("div",{style:{fontSize:10,fontFamily:"'IBM Plex Mono'",letterSpacing:2}},"LIVE FEED")
         ),
         React.createElement("div",{style:{position:"absolute",bottom:10,left:12,fontSize:9,color:T.textMuted,fontFamily:"'IBM Plex Mono'"}},"CAM-0"+cam.id+" | "+cam.location)
       ),
@@ -325,7 +316,7 @@ function CamFeed({cam,onToggle}){
     ),
     React.createElement("div",{style:{padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
       React.createElement("div",null,
-        React.createElement("div",{style:{fontSize:13,fontWeight:600,color:T.text}},cam.name,hasStream&&!streamErr&&React.createElement("span",{style:{fontSize:9,marginLeft:6,padding:"2px 6px",borderRadius:4,background:T.accentDim,color:T.accent,fontWeight:700}},"HW")),
+        React.createElement("div",{style:{fontSize:13,fontWeight:600,color:T.text}},cam.name),
         React.createElement("div",{style:{fontSize:11,color:T.textMuted}},cam.motionEvents+" events today")
       ),
       React.createElement(Toggle,{on:isOn,onToggle:()=>onToggle(cam.id)})
@@ -399,47 +390,24 @@ function AuthScreen({onLogin}){
       marginBottom:12},
   });
 
-  const authFetch=async(path,body)=>{
-    const ctrl=new AbortController();
-    const timer=setTimeout(()=>ctrl.abort(),15000); // 15s timeout
-    try{
-      const res=await fetch(`/api${path}`,{
-        method:"POST",signal:ctrl.signal,
-        headers:{"Content-Type":"application/json","Authorization":api.token?`Bearer ${api.token}`:""},
-        body:JSON.stringify(body),
-      });
-      clearTimeout(timer);
-      const data=await res.json();
-      return data;
-    }catch(e){
-      clearTimeout(timer);
-      if(e.name==="AbortError") return {error:"Request timed out. Please check the server and try again."};
-      return {error:"Server unreachable — make sure the backend is running."};
-    }
-  };
-
   const handleLogin=async()=>{
     if(!email||!pass){setError("Please fill all fields");return;}
     setLoading(true);setError("");
-    try{
-      const res=await authFetch("/auth/login",{email,password:pass});
-      if(res&&res.token){api.token=res.token;onLogin(res.user);}
-      else setError(res?.error||"Login failed — server may be starting up.");
-    }finally{setLoading(false);}
+    const res=await api.post("/auth/login",{email,password:pass});
+    if(res&&res.token){api.token=res.token;onLogin(res.user);}
+    else setError(res?.error||"Login failed — server may be starting up.");
+    setLoading(false);
   };
 
   const handleRegister=async()=>{
     if(!rName||!rEmail||!rPass||!rConf){setError("Please fill all fields");return;}
-    if(rPass!==rConf){setError("Passwords do not match");return;}
-    if(rPass.length<6){setError("Password must be at least 6 characters");return;}
     setLoading(true);setError("");
-    try{
-      const res=await authFetch("/auth/register",{
-        name:rName,email:rEmail,password:rPass,confirm_password:rConf,
-      });
-      if(res&&res.token){api.token=res.token;onLogin(res.user);}
-      else setError(res?.error||"Registration failed. Please try again.");
-    }finally{setLoading(false);}
+    const res=await api.post("/auth/register",{
+      name:rName,email:rEmail,password:rPass,confirm_password:rConf,
+    });
+    if(res&&res.token){api.token=res.token;onLogin(res.user);}
+    else setError(res?.error||"Registration failed. Please try again.");
+    setLoading(false);
   };
 
   const isLogin=mode==="login";
