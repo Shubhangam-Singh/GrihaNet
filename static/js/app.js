@@ -41,12 +41,24 @@ const api = {
     if (this.token) headers["Authorization"] = `Bearer ${this.token}`;
     try {
       const res = await fetch(`/api${path}`, { ...opts, headers });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) return data;  // return the error JSON (e.g. {error:"..."}) instead of throwing
-      return data;
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
     } catch (e) {
       console.warn(`API ${path}:`, e.message);
       return null;
+    }
+  },
+  // Auth-specific post: always reads JSON body even on error, so server messages surface
+  async authPost(path, body) {
+    try {
+      const res = await fetch(`/api${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      return await res.json();
+    } catch (e) {
+      return { error: "Server unreachable — make sure the backend is running." };
     }
   },
   get: (p) => api.call(p),
@@ -409,7 +421,7 @@ function AuthScreen({onLogin}){
     if(!email||!pass){setError("Please fill all fields");return;}
     setLoading(true);setError("");
     try{
-      const res=await api.post("/auth/login",{email,password:pass});
+      const res=await api.authPost("/auth/login",{email,password:pass});
       if(res&&res.token){api.token=res.token;onLogin(res.user);}
       else setError(res?.error||"Login failed — check credentials.");
     }finally{setLoading(false);}
@@ -421,7 +433,7 @@ function AuthScreen({onLogin}){
     if(rPass!==rConf){setError("Passwords do not match");return;}
     setLoading(true);setError("");
     try{
-      const res=await api.post("/auth/register",{
+      const res=await api.authPost("/auth/register",{
         name:rName,email:rEmail,password:rPass,confirm_password:rConf,
       });
       if(res&&res.token){api.token=res.token;onLogin(res.user);}
