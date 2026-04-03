@@ -73,6 +73,30 @@ def generate_pdf_report():
         active_cams = sum(1 for c in cameras if c.status == "active")
         online_devs = sum(1 for d in devices if d.is_online)
 
+        # ── Unicode safety: Helvetica only supports Latin-1 (code points 0-255).
+        # Strip anything outside that range (emoji, Devanagari, etc.) so fpdf2
+        # never crashes on unsupported characters.
+        def safe(text):
+            if not text:
+                return ""
+            text = str(text)
+            # Replace common Unicode punctuation with ASCII equivalents
+            replacements = {
+                "\u2018": "'", "\u2019": "'",   # curly single quotes
+                "\u201c": '"', "\u201d": '"',   # curly double quotes
+                "\u2013": "-", "\u2014": "-",   # en-dash, em-dash
+                "\u2026": "...",                # ellipsis
+                "\u00d7": "x",                  # multiplication sign
+                "\u2032": "'",                  # prime
+                "\u2033": '"',                  # double prime
+                "\u2122": "(TM)",               # trademark
+                "\u00ae": "(R)",                # registered
+            }
+            for char, sub in replacements.items():
+                text = text.replace(char, sub)
+            # Strip any remaining non-Latin-1 characters (emoji etc.)
+            return "".join(c if ord(c) < 256 else "" for c in text)
+
         class PDF(FPDF):
             def header(self):
                 self.set_font("helvetica", "B", 24)
@@ -88,7 +112,7 @@ def generate_pdf_report():
                 self.set_y(-15)
                 self.set_font("helvetica", "I", 8)
                 self.set_text_color(150, 150, 150)
-                self.cell(0, 10, f"Page {self.page_no()} — Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", align="C")
+                self.cell(0, 10, f"Page {self.page_no()} - Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", align="C")
 
         pdf = PDF()
         pdf.add_page()
@@ -108,9 +132,9 @@ def generate_pdf_report():
         pdf.ln(2)
 
         rows = [
-            ("Name:",  user.name  if user else "Guest",  "Power Consumption:", f"{total_watts/1000:.2f} kW"),
-            ("Email:", user.email if user else "N/A",    "Active Cameras:",    f"{active_cams} / {len(cameras)}"),
-            ("Role:",  (user.role.capitalize() if user else "User"), "Devices Online:", f"{online_devs} / {len(devices)}"),
+            ("Name:",  safe(user.name)  if user else "Guest",  "Power Consumption:", f"{total_watts/1000:.2f} kW"),
+            ("Email:", safe(user.email) if user else "N/A",    "Active Cameras:",    f"{active_cams} / {len(cameras)}"),
+            ("Role:",  safe(user.role.capitalize() if user else "User"), "Devices Online:", f"{online_devs} / {len(devices)}"),
         ]
         for label1, val1, label2, val2 in rows:
             pdf.set_font("helvetica", "", 11)
@@ -126,7 +150,34 @@ def generate_pdf_report():
 
         pdf.ln(10)
 
-        # ── 2. Alert Log Table ──────────────────────────────────────
+        # ── 2. Active Appliances Summary ───────────────────────────
+        on_appliances = [a for a in appliances if a.is_on]
+        if on_appliances:
+            pdf.set_font("helvetica", "B", 14)
+            pdf.set_text_color(0, 229, 160)
+            pdf.cell(0, 10, "Active Appliances", border="B", ln=True)
+            pdf.ln(2)
+
+            pdf.set_font("helvetica", "B", 10)
+            pdf.set_text_color(255, 255, 255)
+            pdf.set_fill_color(0, 229, 160)
+            pdf.cell(90, 8, "Appliance",  border=1, fill=True)
+            pdf.cell(40, 8, "Room",       border=1, fill=True)
+            pdf.cell(60, 8, "Power (W)",  border=1, fill=True, ln=True)
+
+            pdf.set_font("helvetica", "", 9)
+            pdf.set_text_color(0, 0, 0)
+            for idx, a in enumerate(on_appliances):
+                fill = idx % 2 != 0
+                if fill:
+                    pdf.set_fill_color(240, 245, 250)
+                pdf.cell(90, 8, safe(a.name),  border=1, fill=fill)
+                pdf.cell(40, 8, safe(a.room),  border=1, fill=fill)
+                pdf.cell(60, 8, str(a.watts),  border=1, fill=fill, ln=True)
+
+            pdf.ln(8)
+
+        # ── 3. Recent Activity Log ──────────────────────────────────
         pdf.set_font("helvetica", "B", 14)
         pdf.set_text_color(0, 229, 160)
         pdf.cell(0, 10, "Recent Activity Log", border="B", ln=True)
@@ -151,8 +202,8 @@ def generate_pdf_report():
                     pdf.set_fill_color(240, 245, 250)
                 time_str = alert.created_at.strftime("%Y-%m-%d %H:%M") if alert.created_at else ""
                 pdf.cell(45, 8, time_str, border=1, fill=fill)
-                pdf.cell(30, 8, (alert.module or "System").capitalize(), border=1, fill=fill)
-                msg = getattr(alert, "message", "Alert")  # Alert model uses 'message', not 'msg'
+                pdf.cell(30, 8, safe(alert.module or "System").capitalize(), border=1, fill=fill)
+                msg = safe(getattr(alert, "message", "Alert"))
                 msg = (msg[:65] + "...") if len(msg) > 65 else msg
                 pdf.cell(115, 8, msg, border=1, fill=fill, ln=True)
 
@@ -165,4 +216,3 @@ def generate_pdf_report():
         import traceback
         traceback.print_exc()
         return jsonify({"error": f"PDF generation failed: {str(e)}"}), 500
-
