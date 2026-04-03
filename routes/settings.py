@@ -3,7 +3,7 @@
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
-from fpdf import FPDF
+# fpdf imported lazily inside generate_pdf_report() to avoid Vercel cold-start crash
 from models import db, Settings, User, Appliance, Camera, NetworkDevice, Alert
 
 settings_bp = Blueprint("settings", __name__)
@@ -62,6 +62,7 @@ def get_setting(key):
 def generate_pdf_report():
     """Generates and downloads a comprehensive system report in PDF format."""
     try:
+        from fpdf import FPDF  # Lazy import — avoids Vercel cold-start failure
         user_id = int(get_jwt_identity())  # JWT identity is a string — must cast to int
         user = User.query.get(user_id)
         appliances = Appliance.query.filter_by(user_id=user_id).all()
