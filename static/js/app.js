@@ -41,8 +41,9 @@ const api = {
     if (this.token) headers["Authorization"] = `Bearer ${this.token}`;
     try {
       const res = await fetch(`/api${path}`, { ...opts, headers });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
+      const data = await res.json().catch(() => null);
+      if (!res.ok) return data;  // return the error JSON (e.g. {error:"..."}) instead of throwing
+      return data;
     } catch (e) {
       console.warn(`API ${path}:`, e.message);
       return null;
@@ -247,33 +248,45 @@ function TerminalWidget() {
   const [logs, setLogs] = useState([]);
   const bottomRef = useRef(null);
   const containerRef = useRef(null);
-  
+
   useEffect(() => {
-    const topics = ["sensor/front_door/motion", "system/heartbeat", "camera/backyard/status", "power/meter/main", "network/router/bandwidth"];
-    const actions = [`{"motion":true}`, `{"status":"ok"}`, `{"active":true}`, `{"watts":${Math.floor(Math.random()*1500+500)}}`, `{"ping":${Math.floor(Math.random()*40+10)}}`];
-    
-    // Seed initial logs
-    const initLogs = Array.from({length: 12}).map((_, i) => {
+    const topics = [
+      "sensor/front_door/motion", "system/heartbeat", "camera/backyard/status",
+      "power/meter/main", "network/router/bandwidth", "sensor/garage/pir",
+      "camera/living_room/status", "power/geyser/watts",
+    ];
+
+    const makePayload = (t) => {
+      if (t.includes("power") || t.includes("watts")) return `{"watts":${Math.floor(Math.random()*2000+200)}}`;
+      if (t.includes("motion") || t.includes("pir"))  return `{"motion":${Math.random()>0.4}}`;
+      if (t.includes("network"))                        return `{"ping":${Math.floor(Math.random()*30+5)},"mbps":${(Math.random()*120+20).toFixed(1)}}`;
+      if (t.includes("camera"))                         return `{"active":${Math.random()>0.2}}`;
+      return `{"status":"ok"}`;
+    };
+
+    // Seed 12 back-dated logs so the terminal looks alive from first render
+    const now = Date.now();
+    const initLogs = Array.from({length: 12}, (_, i) => {
       const t = topics[Math.floor(Math.random()*topics.length)];
-      return `[${new Date(Date.now()-(12-i)*1000).toISOString()}] MQTT: recv topic '${t}' payload=${actions[topics.indexOf(t)]||`{"status":"ok"}`}`;
+      return `[${new Date(now-(12-i)*1200).toISOString()}] MQTT: recv topic '${t}' payload=${makePayload(t)}`;
     });
     setLogs(initLogs);
 
-    const intv = setInterval(() => {
+    // Recursive setTimeout gives each tick an independent random delay
+    let timer;
+    const tick = () => {
       const t = topics[Math.floor(Math.random()*topics.length)];
-      let act = `{"status":"ok"}`;
-      if(t.includes("power")) act = `{"watts":${Math.floor(Math.random()*2000+500)}}`;
-      else if(t.includes("motion")) act = `{"motion":${Math.random()>0.5}}`;
-      else if(t.includes("network")) act = `{"ping":${Math.floor(Math.random()*30+10)},"mbps":${(Math.random()*100+50).toFixed(1)}}`;
-      
-      const newLog = `[${new Date().toISOString()}] MQTT: recv topic '${t}' payload=${act}`;
-      setLogs(l => [...l, newLog].slice(-50));
-    }, 800 + Math.random() * 1500);
-    return () => clearInterval(intv);
+      const newLog = `[${new Date().toISOString()}] MQTT: recv topic '${t}' payload=${makePayload(t)}`;
+      setLogs(l => [...l, newLog].slice(-60));
+      timer = setTimeout(tick, 700 + Math.random()*1400);
+    };
+    timer = setTimeout(tick, 900);
+    return () => clearTimeout(timer);
   }, []);
 
+  // Auto-scroll to bottom whenever logs update
   useEffect(() => {
-    if(containerRef.current) containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    if (bottomRef.current) bottomRef.current.scrollIntoView({behavior:"smooth"});
   }, [logs]);
 
   return h("div", {style: {marginTop: 24, background: "#06090f", border: `1px solid ${T.border}`, borderRadius: 10, overflow: "hidden"}},
@@ -284,10 +297,12 @@ function TerminalWidget() {
       )
     ),
     h("div", {ref: containerRef, style: {padding: "12px 16px", height: 260, overflowY: "auto", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.accent, lineHeight: 1.6}},
-      logs.map((l, i) => h("div", {key: i, style: {whiteSpace: "pre-wrap", wordBreak: "break-all", opacity: i === logs.length - 1 ? 1 : 0.7, marginBottom: 4}}, l))
+      logs.map((l, i) => h("div", {key: i, style: {whiteSpace: "pre-wrap", wordBreak: "break-all", opacity: i === logs.length - 1 ? 1 : 0.7, marginBottom: 4}}, l)),
+      h("div", {ref: bottomRef})
     )
   );
 }
+
 
 /* Camera Feed */
 function CamFeed({cam,onToggle}){
@@ -393,21 +408,25 @@ function AuthScreen({onLogin}){
   const handleLogin=async()=>{
     if(!email||!pass){setError("Please fill all fields");return;}
     setLoading(true);setError("");
-    const res=await api.post("/auth/login",{email,password:pass});
-    if(res&&res.token){api.token=res.token;onLogin(res.user);}
-    else setError(res?.error||"Login failed — server may be starting up.");
-    setLoading(false);
+    try{
+      const res=await api.post("/auth/login",{email,password:pass});
+      if(res&&res.token){api.token=res.token;onLogin(res.user);}
+      else setError(res?.error||"Login failed — check credentials.");
+    }finally{setLoading(false);}
   };
 
   const handleRegister=async()=>{
     if(!rName||!rEmail||!rPass||!rConf){setError("Please fill all fields");return;}
+    if(rPass.length<6){setError("Password must be at least 6 characters");return;}
+    if(rPass!==rConf){setError("Passwords do not match");return;}
     setLoading(true);setError("");
-    const res=await api.post("/auth/register",{
-      name:rName,email:rEmail,password:rPass,confirm_password:rConf,
-    });
-    if(res&&res.token){api.token=res.token;onLogin(res.user);}
-    else setError(res?.error||"Registration failed. Please try again.");
-    setLoading(false);
+    try{
+      const res=await api.post("/auth/register",{
+        name:rName,email:rEmail,password:rPass,confirm_password:rConf,
+      });
+      if(res&&res.token){api.token=res.token;onLogin(res.user);}
+      else setError(res?.error||"Registration failed. Please try again.");
+    }finally{setLoading(false);}
   };
 
   const isLogin=mode==="login";
