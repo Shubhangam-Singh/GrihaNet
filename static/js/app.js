@@ -148,31 +148,55 @@ const MOTION_TYPES = [
 ];
 
 /* ─── COMPONENTS ─── */
-function Card({children,style,glow,onClick}){
-  return React.createElement("div",{onClick,style:{background:T.card,border:`1px solid ${glow?T.accent+"44":T.border}`,borderRadius:14,padding:18,transition:"all .25s",cursor:onClick?"pointer":"default",...(glow&&{boxShadow:`0 0 24px ${T.accent}12`}),...style}},children);
+function Card({children,style,glow,onClick,className}){
+  const base="card"+(className?" "+className:"");
+  return React.createElement("div",{
+    onClick,className:base,
+    style:{
+      ...(glow&&{borderColor:T.accent+"66",boxShadow:`0 0 28px ${T.accent}14`}),
+      ...(onClick&&{cursor:"pointer"}),
+      ...style
+    }
+  },children);
 }
 function Stat({label,value,unit,icon,color=T.accent,trend,sub}){
-  return React.createElement(Card,{style:{position:"relative",overflow:"hidden"}},
-    React.createElement("div",{style:{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",background:color+"08"}}),
-    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative"}},
-      React.createElement("div",null,
-        React.createElement("div",{style:{fontSize:11,fontWeight:600,color:T.textMuted,letterSpacing:1.2,textTransform:"uppercase",marginBottom:10}},label),
-        React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:5}},
-          React.createElement("span",{style:{fontSize:30,fontWeight:700,color,fontFamily:"'IBM Plex Mono',monospace",lineHeight:1}},value),
-          unit&&React.createElement("span",{style:{fontSize:13,color:T.textSec,fontWeight:500}},unit)
+  const h=React.createElement;
+  return h("div",{className:"stat-card","data-tooltip":label},
+    h("div",{style:{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",background:color+"0a",pointerEvents:"none"}}),
+    h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative"}},
+      h("div",null,
+        h("div",{className:"section-title",style:{marginBottom:10}},label),
+        h("div",{style:{display:"flex",alignItems:"baseline",gap:5}},
+          h("span",{style:{fontSize:30,fontWeight:700,color,fontFamily:"'IBM Plex Mono',monospace",lineHeight:1}},value),
+          unit&&h("span",{style:{fontSize:13,color:T.textMuted,fontWeight:500}},unit)
         ),
-        trend&&React.createElement("div",{style:{fontSize:11,marginTop:8,color:trend.good?T.accent:T.red,fontWeight:600}},trend.text),
-        sub&&React.createElement("div",{style:{fontSize:11,marginTop:4,color:T.textMuted}},sub)
+        trend&&h("div",{style:{fontSize:11,marginTop:8,color:trend.good?T.accent:T.red,fontWeight:600}},trend.text),
+        sub&&h("div",{style:{fontSize:11,marginTop:4,color:T.textMuted}},sub)
       ),
-      React.createElement("div",{style:{fontSize:26,width:46,height:46,borderRadius:12,background:color+"12",display:"flex",alignItems:"center",justifyContent:"center"}},icon)
+      h("div",{style:{fontSize:26,width:46,height:46,borderRadius:12,background:color+"14",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},icon)
     )
   );
 }
-function Badge({text,color}){return React.createElement("span",{style:{fontSize:10,padding:"3px 9px",borderRadius:20,background:color+"18",color,fontWeight:700,letterSpacing:.5,textTransform:"uppercase"}},text);}
+function Badge({text,color}){
+  // Map runtime colour values to CSS badge classes where possible
+  const colorMap={
+    [T.red]:"badge-danger",[T.orange]:"badge-warn",[T.accent]:"badge-teal",
+    [T.blue]:"badge-blue",[T.purple]:"badge-blue",[T.cyan]:"badge-teal",
+    "#ff4757":"badge-danger","#ff8c42":"badge-warn","#00e5a0":"badge-teal","#3391ff":"badge-blue",
+    [T.green??"#22c55e"]:"badge-success","#22c55e":"badge-success",
+  };
+  const cls=colorMap[color];
+  if(cls) return React.createElement("span",{className:"badge "+cls},text);
+  // Fallback: inline colour for custom values
+  return React.createElement("span",{className:"badge",style:{background:color+"22",color}},text);
+}
 function Toggle({on,onToggle,disabled}){
-  return React.createElement("div",{onClick:disabled?undefined:onToggle,style:{width:42,height:24,borderRadius:12,background:on?T.accent:T.border,cursor:disabled?"not-allowed":"pointer",position:"relative",transition:"all .25s",opacity:disabled?.5:1}},
-    React.createElement("div",{style:{width:18,height:18,borderRadius:"50%",background:"#fff",position:"absolute",top:3,left:on?21:3,transition:"left .25s",boxShadow:"0 1px 4px rgba(0,0,0,.3)"}})
-  );
+  return React.createElement("button",{
+    onClick:disabled?undefined:onToggle,
+    className:"toggle"+(on?" on":""),
+    style:{opacity:disabled?.45:1,cursor:disabled?"not-allowed":"pointer"},
+    "aria-label":on?"Turn off":"Turn on"
+  });
 }
 function ProgressBar({value,max,color}){
   const pct=Math.min((value/max)*100,100);
@@ -181,20 +205,34 @@ function ProgressBar({value,max,color}){
   );
 }
 function TabBtn({active,icon,label,count,onClick,tooltip}){
-  return React.createElement("button",{"data-tooltip":tooltip,onClick,style:{padding:"10px 16px",borderRadius:10,border:"none",background:active?T.accentDim:"transparent",color:active?T.accent:T.textSec,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:7,whiteSpace:"nowrap",transition:"all .2s",fontFamily:"'DM Sans',sans-serif"}},
+  return React.createElement("button",{
+    "data-tooltip":tooltip,onClick,
+    style:{
+      padding:"9px 15px",borderRadius:10,border:"none",
+      background:active?"var(--teal-glow)":"transparent",
+      color:active?"var(--teal)":"var(--text-muted)",
+      fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",
+      gap:7,whiteSpace:"nowrap",transition:"var(--transition)",fontFamily:"'DM Sans',sans-serif",
+      boxShadow:active?"inset 0 0 0 1px var(--teal-glow)":"none",
+    }},
     icon," ",label,
-    count!=null&&count>0&&React.createElement("span",{style:{background:T.red,color:"#fff",fontSize:9,padding:"2px 6px",borderRadius:10,fontWeight:700}},count)
+    count!=null&&count>0&&React.createElement("span",{
+      style:{background:"var(--danger)",color:"#fff",fontSize:9,padding:"2px 6px",borderRadius:10,fontWeight:700}
+    },count)
   );
 }
 function Toast({toasts,onDismiss}){
   return React.createElement("div",{style:{position:"fixed",top:70,right:20,zIndex:999,display:"flex",flexDirection:"column",gap:8,maxWidth:340}},
-    toasts.map(t=>React.createElement("div",{key:t.id,style:{padding:"12px 16px",borderRadius:10,background:T.surface,border:`1px solid ${t.color}44`,boxShadow:`0 8px 30px rgba(0,0,0,.4)`,animation:"slideDown .35s ease",display:"flex",alignItems:"center",gap:10}},
+    toasts.map(t=>React.createElement("div",{
+      key:t.id,className:"card fade-in",
+      style:{padding:"12px 16px",borderColor:t.color+"44",boxShadow:`0 8px 30px rgba(0,0,0,.45)`,display:"flex",alignItems:"center",gap:10,minWidth:260}
+    },
       React.createElement("span",{style:{fontSize:18}},t.icon),
       React.createElement("div",{style:{flex:1}},
-        React.createElement("div",{style:{fontSize:12,fontWeight:600,color:t.color}},t.title),
-        React.createElement("div",{style:{fontSize:11,color:T.textSec,marginTop:2}},t.msg)
+        React.createElement("div",{style:{fontSize:12,fontWeight:700,color:t.color}},t.title),
+        React.createElement("div",{style:{fontSize:11,color:"var(--text-muted)",marginTop:2}},t.msg)
       ),
-      React.createElement("button",{onClick:()=>onDismiss(t.id),style:{background:"none",border:"none",color:T.textMuted,fontSize:16,cursor:"pointer",padding:"0 2px",lineHeight:1,fontFamily:"inherit"}},"×")
+      React.createElement("button",{onClick:()=>onDismiss(t.id),className:"btn",style:{background:"none",border:"none",color:"var(--text-dim)",fontSize:18,cursor:"pointer",padding:"0 2px",lineHeight:1}},"×")
     ))
   );
 }
