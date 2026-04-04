@@ -222,17 +222,41 @@ function TabBtn({active,icon,label,count,onClick,tooltip}){
   );
 }
 function Toast({toasts,onDismiss}){
-  return React.createElement("div",{style:{position:"fixed",top:70,right:20,zIndex:999,display:"flex",flexDirection:"column",gap:8,maxWidth:340}},
-    toasts.map(t=>React.createElement("div",{
-      key:t.id,className:"card fade-in",
-      style:{padding:"12px 16px",borderColor:t.color+"44",boxShadow:`0 8px 30px rgba(0,0,0,.45)`,display:"flex",alignItems:"center",gap:10,minWidth:260}
+  const h=React.createElement;
+  return h("div",{style:{
+    position:"fixed",top:72,left:"50%",transform:"translateX(-50%)",
+    zIndex:9998,display:"flex",flexDirection:"column",gap:8,
+    alignItems:"center",pointerEvents:"none",width:"max-content",maxWidth:380,
+  }},
+    toasts.map(t=>h("div",{key:t.id,
+      style:{
+        pointerEvents:"all",position:"relative",overflow:"hidden",
+        display:"flex",alignItems:"center",gap:12,
+        padding:"12px 16px",minWidth:280,
+        background:"rgba(17,24,39,0.88)",
+        backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",
+        border:"1px solid var(--border)",
+        borderLeft:`3px solid ${t.color||"var(--teal)"}`,
+        borderRadius:"var(--radius-sm)",
+        boxShadow:"0 8px 32px rgba(0,0,0,0.5)",
+        animation:"toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
+      }
     },
-      React.createElement("span",{style:{fontSize:18}},t.icon),
-      React.createElement("div",{style:{flex:1}},
-        React.createElement("div",{style:{fontSize:12,fontWeight:700,color:t.color}},t.title),
-        React.createElement("div",{style:{fontSize:11,color:"var(--text-muted)",marginTop:2}},t.msg)
+      h("span",{style:{fontSize:18,flexShrink:0}},t.icon),
+      h("div",{style:{flex:1,minWidth:0}},
+        h("div",{style:{fontSize:12,fontWeight:700,color:t.color||"var(--teal)"}},t.title),
+        h("div",{style:{fontSize:11,color:"var(--text-muted)",marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},t.msg)
       ),
-      React.createElement("button",{onClick:()=>onDismiss(t.id),className:"btn",style:{background:"none",border:"none",color:"var(--text-dim)",fontSize:18,cursor:"pointer",padding:"0 2px",lineHeight:1}},"×")
+      h("button",{onClick:()=>onDismiss(t.id),style:{
+        background:"none",border:"none",color:"var(--text-dim)",
+        fontSize:17,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0
+      }},"\xD7"),
+      /* Progress countdown bar */
+      h("div",{style:{
+        position:"absolute",bottom:0,left:0,height:2,
+        background:t.color||"var(--teal)",opacity:.6,
+        animation:"shrink 3.5s linear forwards",
+      }})
     ))
   );
 }
@@ -367,37 +391,76 @@ function CamFeed({cam,onToggle,onDelete}){
   const isOn=cam.status==="active";
   const [tick,setTick]=useState(0);
   useEffect(()=>{if(!isOn)return;const i=setInterval(()=>setTick(t=>t+1),1000);return()=>clearInterval(i);},[isOn]);
-  return h(Card,{style:{padding:0,overflow:"hidden"}},
-    h("div",{style:{height:155,background:isOn?`linear-gradient(${120+tick%60}deg,#080e1a,#101c30,#0a1422)`:"#0e0e0e",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}},
+
+  return h("div",{style:{
+    background:"var(--bg-card)",border:"1px solid var(--border)",
+    borderRadius:"var(--radius)",overflow:"hidden",
+    transition:"var(--transition)",
+  }},
+    /* Viewport — true 16/9 */
+    h("div",{style:{
+      position:"relative",paddingTop:"56.25%",
+      background:isOn
+        ?`linear-gradient(${120+tick%60}deg,#060d1a,#0d1a2e,#081422)`
+        :"#0c0c0c",
+      filter:isOn?"none":"grayscale(0.8) brightness(0.5)",
+      overflow:"hidden",
+    }},
+      /* Active camera content */
       isOn&&h(React.Fragment,null,
-        h("div",{style:{position:"absolute",left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${T.accent}30,transparent)`,top:`${(tick*5)%100}%`,transition:"top 1s linear"}}),
-        h("div",{style:{position:"absolute",top:10,left:12,display:"flex",alignItems:"center",gap:5}},
-          h("div",{style:{width:7,height:7,borderRadius:"50%",background:T.red,animation:"pulse 1.5s infinite"}}),
-          h("span",{style:{fontSize:9,color:T.red,fontFamily:"'IBM Plex Mono'",fontWeight:700}},"REC")
+        /* Scan line */
+        h("div",{className:"cam-scan",style:{
+          position:"absolute",left:0,right:0,height:"1px",zIndex:2,
+          background:"linear-gradient(90deg,transparent,rgba(0,229,160,0.5),transparent)",
+          boxShadow:"0 0 8px rgba(0,229,160,0.3)",
+        }}),
+        /* REC badge top-left */
+        h("div",{style:{position:"absolute",top:10,left:12,display:"flex",alignItems:"center",gap:5,zIndex:3}},
+          h("div",{style:{width:6,height:6,borderRadius:"50%",background:"var(--danger)",animation:"pulse 1.5s infinite"}}),
+          h("span",{style:{fontSize:9,color:"var(--danger)",fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,letterSpacing:1}},"REC")
         ),
-        h("div",{style:{position:"absolute",top:10,right:12,fontSize:9,color:T.textMuted,fontFamily:"'IBM Plex Mono'"}},new Date().toLocaleTimeString()),
-        h("div",{style:{textAlign:"center",color:T.textSec,zIndex:2}},
-          h("div",{style:{fontSize:36,marginBottom:2}},"📹"),
-          h("div",{style:{fontSize:10,fontFamily:"'IBM Plex Mono'",letterSpacing:2}},"LIVE FEED")
+        /* Status badge top-right */
+        h("span",{className:"badge badge-teal",style:{position:"absolute",top:10,right:10,zIndex:3,fontSize:8,padding:"2px 7px"}},"ACTIVE"),
+        /* Timestamp top-right below badge */
+        h("div",{style:{position:"absolute",top:30,right:10,fontSize:8,color:"rgba(255,255,255,0.35)",fontFamily:"'IBM Plex Mono',monospace",zIndex:3}},new Date().toLocaleTimeString()),
+        /* Center icon */
+        h("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",zIndex:1}},
+          h("div",{style:{textAlign:"center",opacity:.25}},
+            h("div",{style:{fontSize:36}},"📹"),
+            h("div",{style:{fontSize:8,fontFamily:"'IBM Plex Mono',monospace",letterSpacing:3,marginTop:4}},"LIVE FEED")
+          )
         ),
-        h("div",{style:{position:"absolute",bottom:10,left:12,fontSize:9,color:T.textMuted,fontFamily:"'IBM Plex Mono'"}},"CAM-0"+cam.id+" | "+cam.location)
+        /* Camera ID bottom-left */
+        h("div",{style:{position:"absolute",bottom:8,left:10,fontSize:8,color:"rgba(255,255,255,0.3)",fontFamily:"'IBM Plex Mono',monospace",zIndex:3}},"CAM-0"+cam.id+" • "+cam.location)
       ),
-      !isOn&&h("div",{style:{textAlign:"center",color:T.textMuted}},
-        h("div",{style:{fontSize:32,marginBottom:4,opacity:.4}},"📷"),
-        h("div",{style:{fontSize:10,letterSpacing:2}},"OFFLINE")
+      /* Offline overlay */
+      !isOn&&h("div",{style:{
+        position:"absolute",inset:0,display:"flex",flexDirection:"column",
+        alignItems:"center",justifyContent:"center",gap:8,
+        background:"rgba(0,0,0,0.5)",zIndex:2
+      }},
+        /* Status badge top-right even when offline */
+        h("span",{className:"badge badge-danger",style:{position:"absolute",top:10,right:10,fontSize:8,padding:"2px 7px"}},"OFFLINE"),
+        h("div",{style:{fontSize:32,opacity:.3}},"📷"),
+        h("div",{style:{fontSize:9,letterSpacing:3,color:"var(--text-dim)",fontFamily:"'IBM Plex Mono',monospace"}},"CAMERA OFFLINE")
       )
     ),
-    h("div",{style:{padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
+    /* Footer row */
+    h("div",{style:{padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"1px solid var(--border)"}},
       h("div",null,
-        h("div",{style:{fontSize:13,fontWeight:600,color:T.text}},cam.name),
-        h("div",{style:{fontSize:11,color:T.textMuted}},cam.location+" • "+cam.motionEvents+" events")
+        h("div",{style:{fontSize:13,fontWeight:700,color:"var(--text)"}},cam.name),
+        h("div",{style:{fontSize:10,color:"var(--text-dim)",marginTop:1,fontFamily:"'IBM Plex Mono',monospace"}},cam.location+" • "+cam.motionEvents+" events")
       ),
       h("div",{style:{display:"flex",gap:8,alignItems:"center"}},
         h(Toggle,{on:isOn,onToggle:()=>onToggle(cam.id)}),
         onDelete&&h("button",{"data-tooltip":"Remove this camera",onClick:()=>onDelete(cam),
-          style:{background:"transparent",border:`1px solid ${T.red}44`,color:T.red,
+          style:{background:"transparent",border:"1px solid rgba(239,68,68,0.3)",color:"var(--danger)",
             width:28,height:28,borderRadius:6,cursor:"pointer",fontSize:13,
-            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},"🗑️")
+            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,
+            transition:"var(--transition)"},
+          onMouseEnter:e=>e.currentTarget.style.background="rgba(239,68,68,0.1)",
+          onMouseLeave:e=>e.currentTarget.style.background="transparent"
+        },"🗑️")
       )
     )
   );
@@ -908,79 +971,124 @@ function ChatWidget({user, appliances, devices, cameras, alerts}){
   const send=async(e)=>{
     e.preventDefault();
     if(!input.trim()||loading)return;
-    const userMsg = input.trim();
+    const userMsg=input.trim();
     setInput("");
-    const prevMsgs = [...msgs];
+    const prevMsgs=[...msgs];
     setMsgs([...prevMsgs,{role:"user",text:userMsg}]);
     setLoading(true);
-
-    const activeCams = cameras?.filter(c=>c.status==='active').length || 0;
-    const unreadAlerts = alerts?.filter(a=>!a.read).length || 0;
-    const powerKW = appliances ? (appliances.reduce((s,a)=>s+(a.on?a.watts:0),0)/1000).toFixed(2) : 0;
-    const activeAppliances = appliances ? appliances.filter(a=>a.on).length : 0;
-    const onlineDevices = devices ? devices.filter(d=>d.online).length : 0;
-    
-    const liveState = `User: ${(user&&user.name)?user.name:'Guest'} | Power: ${powerKW}kW (${activeAppliances} appliances ON) | Network: ${onlineDevices} devices online | Cameras: ${activeCams} active | Unread Alerts: ${unreadAlerts}`;
-
-    const res=await api.post("/chat/ask",{message:userMsg, history:prevMsgs, live_state:liveState});
+    const activeCams=cameras?.filter(c=>c.status==="active").length||0;
+    const unreadAlerts=alerts?.filter(a=>!a.read).length||0;
+    const powerKW=appliances?(appliances.reduce((s,a)=>s+(a.on?a.watts:0),0)/1000).toFixed(2):0;
+    const activeAppliances=appliances?appliances.filter(a=>a.on).length:0;
+    const onlineDevices=devices?devices.filter(d=>d.online).length:0;
+    const liveState=`User: ${(user&&user.name)?user.name:"Guest"} | Power: ${powerKW}kW (${activeAppliances} appliances ON) | Network: ${onlineDevices} devices online | Cameras: ${activeCams} active | Unread Alerts: ${unreadAlerts}`;
+    const res=await api.post("/chat/ask",{message:userMsg,history:prevMsgs,live_state:liveState});
     if(res&&res.reply) setMsgs([...prevMsgs,{role:"user",text:userMsg},{role:"bot",text:res.reply}]);
     else setMsgs([...prevMsgs,{role:"user",text:userMsg},{role:"bot",text:"Sorry, I'm offline right now."}]);
     setLoading(false);
   };
 
-  const parseMd=txt=>{
-    return txt.split('\n').map((line,i)=>h("div",{key:i,dangerouslySetInnerHTML:{__html:line.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\*(.*?)\*/g,'<i>$1</i>')},style:{marginBottom:line?"4px":0,minHeight:line?0:"6px"}}));
-  };
+  const parseMd=txt=>txt.split("\n").map((line,i)=>h("div",{key:i,dangerouslySetInnerHTML:{__html:line.replace(/\*\*(.*?)\*\*/g,"<b>$1</b>").replace(/\*(.*?)\*/g,"<i>$1</i>")},style:{marginBottom:line?"3px":0,minHeight:line?0:"4px"}}));
 
   return h(React.Fragment,null,
-    /* Floating Button */
-    !open&&h("div",{onClick:()=>setOpen(true),style:{
-      position:"fixed",bottom:30,right:30,width:60,height:60,
-      borderRadius:"50%",background:T.accent,color:"#111",
-      display:"flex",alignItems:"center",justifyContent:"center",
-      fontSize:28,cursor:"pointer",boxShadow:"0 8px 32px rgba(0,0,0,.4)",
-      zIndex:999,animation:"bounceIn .5s cubic-bezier(0.175,0.885,0.32,1.275)"
-    }},"💬"),
-    /* Chat Window */
-    open&&h("div",{style:{
-      position:"fixed",bottom:30,right:30,width:340,height:500,
-      background:T.card,border:`1px solid ${T.border}`,borderRadius:20,
-      boxShadow:"0 12px 48px rgba(0,0,0,.5)",zIndex:999,
-      display:"flex",flexDirection:"column",overflow:"hidden",
-      animation:"slideUp .3s ease"
-    }},
+    /* Floating bubble button */
+    !open&&h("button",{className:"chat-bubble-btn",onClick:()=>setOpen(true),"aria-label":"Open AI chat"},"💬"),
+
+    /* Chat window */
+    open&&h("div",{className:"chat-window"},
       /* Header */
-      h("div",{style:{background:T.surface,padding:"16px 20px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+      h("div",{style:{
+        padding:"14px 18px",
+        borderBottom:"1px solid var(--border)",
+        display:"flex",justifyContent:"space-between",alignItems:"center",
+        background:"linear-gradient(135deg,rgba(0,229,160,0.08),rgba(59,130,246,0.06))",
+      }},
         h("div",{style:{display:"flex",alignItems:"center",gap:10}},
-          h("div",{style:{width:10,height:10,borderRadius:"50%",background:T.accent}}),
-          h("div",{style:{fontWeight:700,fontSize:15}},"GrihaNet AI")
+          h("div",{style:{
+            width:30,height:30,borderRadius:10,
+            background:"linear-gradient(135deg,var(--teal),var(--blue))",
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:14
+          }},"🤖"),
+          h("div",null,
+            h("div",{style:{fontWeight:700,fontSize:14,color:"var(--text)"}},"GrihaNet AI"),
+            h("div",{style:{fontSize:10,color:"var(--teal)",display:"flex",alignItems:"center",gap:4}},
+              h("span",{style:{width:5,height:5,borderRadius:"50%",background:"var(--teal)",display:"inline-block",animation:"pulse 2s infinite"}}),
+              "Online"
+            )
+          )
         ),
-        h("div",{onClick:()=>setOpen(false),style:{cursor:"pointer",color:T.textMuted,fontSize:18}},"✖")
+        h("button",{onClick:()=>setOpen(false),style:{
+          background:"none",border:"1px solid var(--border)",borderRadius:8,
+          color:"var(--text-muted)",fontSize:16,cursor:"pointer",
+          width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center"
+        }},"×")
       ),
-      /* Scroll Area */
-      h("div",{ref:scrollRef,style:{flex:1,padding:20,overflowY:"auto",display:"flex",flexDirection:"column",gap:16}},
+      /* Message area */
+      h("div",{ref:scrollRef,style:{
+        flex:1,padding:"16px",overflowY:"auto",
+        display:"flex",flexDirection:"column",gap:10,
+      }},
         msgs.map((m,i)=>h("div",{key:i,style:{
-          alignSelf:m.role==="user"?"flex-end":"flex-start",
-          maxWidth:"85%",padding:"12px 16px",
-          borderRadius:m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px",
-          background:m.role==="user"?T.accent:T.surface,
-          color:m.role==="user"?"#111":T.text,
-          fontSize:14,lineHeight:1.5
-        }},parseMd(m.text))),
-        loading&&h("div",{style:{alignSelf:"flex-start",background:T.surface,padding:"12px 16px",borderRadius:"16px 16px 16px 4px",color:T.textMuted,fontSize:20}},"💬")
+          display:"flex",
+          justifyContent:m.role==="user"?"flex-end":"flex-start",
+          alignItems:"flex-end",gap:8,
+        }},
+          m.role==="bot"&&h("div",{style:{
+            width:24,height:24,borderRadius:8,flexShrink:0,
+            background:"linear-gradient(135deg,var(--teal),var(--blue))",
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:12
+          }},"🤖"),
+          h("div",{style:{
+            maxWidth:"80%",padding:"10px 14px",
+            borderRadius:m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px",
+            background:m.role==="user"
+              ?"linear-gradient(135deg,var(--teal),var(--blue))"
+              :"var(--bg-card-hover)",
+            color:m.role==="user"?"#fff":"var(--text)",
+            fontSize:13,lineHeight:1.55,
+            border:m.role==="bot"?"1px solid var(--border)":"none",
+          }},parseMd(m.text))
+        )),
+        loading&&h("div",{style:{display:"flex",alignItems:"flex-end",gap:8}},
+          h("div",{style:{
+            width:24,height:24,borderRadius:8,
+            background:"linear-gradient(135deg,var(--teal),var(--blue))",
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:12
+          }},"🤖"),
+          h("div",{style:{
+            padding:"10px 16px",borderRadius:"18px 18px 18px 4px",
+            background:"var(--bg-card-hover)",border:"1px solid var(--border)",
+            display:"flex",gap:5,alignItems:"center",
+          }},
+            [0,1,2].map(i=>h("div",{key:i,style:{
+              width:6,height:6,borderRadius:"50%",background:"var(--teal)",opacity:.6,
+              animation:"pulse 1.2s ease infinite",animationDelay:(i*0.2)+"s"
+            }}))
+          )
+        )
       ),
-      /* Input Area */
-      h("form",{onSubmit:send,style:{padding:"14px",borderTop:`1px solid ${T.border}`,display:"flex",gap:10,background:T.bg}},
-        h("input",{value:input,onChange:e=>setInput(e.target.value),placeholder:"Ask me anything...",style:{
-          flex:1,padding:"12px 16px",borderRadius:24,border:`1px solid ${T.border}`,
-          background:T.surface,color:T.text,fontFamily:"inherit",fontSize:14,outline:"none"
-        }}),
-        h("button",{type:"submit",disabled:!input.trim(),style:{
-          width:42,height:42,borderRadius:"50%",border:"none",
-          background:input.trim()?T.accent:T.border,color:"#111",
-          cursor:input.trim()?"pointer":"default",display:"flex",
-          alignItems:"center",justifyContent:"center",fontSize:16,transition:"all .2s"
-        }},"↑")
+      /* Input area */
+      h("form",{onSubmit:send,style:{
+        padding:"10px 14px 14px",
+        borderTop:"1px solid var(--border)",
+        display:"flex",gap:8,alignItems:"center",
+      }},
+        h("input",{value:input,onChange:e=>setInput(e.target.value),
+          placeholder:"Ask me anything\u2026",className:"inp",
+          style:{flex:1,borderRadius:24,fontSize:13,padding:"9px 16px"}
+        }),
+        h("button",{type:"submit",disabled:!input.trim(),
+          style:{
+            width:36,height:36,borderRadius:"50%",border:"none",flexShrink:0,
+            background:input.trim()
+              ?"linear-gradient(135deg,var(--teal),var(--blue))"
+              :"var(--border)",
+            color:input.trim()?"#fff":"var(--text-dim)",
+            cursor:input.trim()?"pointer":"default",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:15,transition:"all .2s",
+          }
+        },"\u2191")
       )
     )
   );
@@ -1128,6 +1236,7 @@ function GrihaNet(){
   const [togglingIds,setTogglingIds]=useState(new Set());
   const [deviceSearch,setDeviceSearch]=useState("");
   const [alertFilter,setAlertFilter]=useState("all");
+  const [isLoading,setIsLoading]=useState(false);
   const [selectedRoom,setSelectedRoom]=useState(null); // null = all rooms shown
   const [showAddAppliance,setShowAddAppliance]=useState(false);
   const [newAppl,setNewAppl]=useState({name:"",icon:"🔌",watts:"100",room:"Bedroom"});
@@ -1165,6 +1274,7 @@ function GrihaNet(){
 
   /* ─── Fetch data from backend on login ─── */
   const fetchAll=useCallback(async()=>{
+    setIsLoading(true);
     const [appData,devData,camData,alertData,settData,histData,wkData,bwData,autoData]=await Promise.all([
       api.get("/power/appliances"),api.get("/network/devices"),api.get("/cameras/"),
       api.get("/alerts/"),api.get("/settings/"),api.get("/power/history"),
@@ -1179,6 +1289,7 @@ function GrihaNet(){
     if(wkData)setWeeklyData(wkData);
     if(bwData)setBandwidthData(bwData);
     if(autoData)setAutomations(autoData.automations||[]);
+    setIsLoading(false);
   },[]);
 
   const generatePDF = async () => {
@@ -1515,8 +1626,20 @@ function GrihaNet(){
     /* CONTENT — push below fixed header (60px) + sticky tab nav (48px) */
     h("main",{style:{padding:"20px 24px 40px",maxWidth:1280,margin:"0 auto",paddingTop:"128px"}},
 
+      /* ─── SKELETON LOADING SCREEN ─── */
+      isLoading&&h(React.Fragment,null,
+        h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:14,marginBottom:20}},
+          [1,2,3,4].map(i=>h("div",{key:i,className:"skeleton",style:{height:110,borderRadius:"var(--radius)"}}))
+        ),
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}},
+          h("div",{className:"skeleton",style:{height:220,borderRadius:"var(--radius)"}}),
+          h("div",{className:"skeleton",style:{height:220,borderRadius:"var(--radius)"}})
+        ),
+        h("div",{className:"skeleton",style:{height:160,borderRadius:"var(--radius)"}})
+      ),
+
       /* ═══ OVERVIEW ═══ */
-      tab==="overview"&&h(React.Fragment,null,
+      !isLoading&&tab==="overview"&&h(React.Fragment,null,
         /* Stat cards row */
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:14,marginBottom:20}},
 
@@ -2014,8 +2137,11 @@ function GrihaNet(){
             ),
         /* Motion log */
         h(Card,{className:"fadeUp d5"},
-          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},
-            h("div",null,h("div",{style:{fontSize:14,fontWeight:600}},"📋 Motion Event Log"),h("div",{style:{fontSize:11,color:T.textMuted}},motionLog.length+" events • Live")),
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
+            h("div",null,
+              h("div",{style:{fontSize:14,fontWeight:700}},"📋 Motion Event Log"),
+              h("div",{style:{fontSize:11,color:"var(--text-dim)",marginTop:2}},motionLog.length+" events • Live")
+            ),
             h("button",{onClick:async()=>{
               const res=await api.post("/cameras/motions/simulate");
               if(res){
@@ -2023,16 +2149,36 @@ function GrihaNet(){
                 setCameras(c=>c.map(x=>x.name===res.cam?{...x,motionEvents:(x.motionEvents||0)+1}:x));
                 addToast("📹","Motion Simulated",`${res.type} at ${res.cam}`,T.orange);
               }
-            },style:{padding:"6px 14px",borderRadius:8,border:"none",background:T.orangeDim,color:T.orange,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}},"▶ Simulate")
+            },className:"btn btn-ghost",style:{fontSize:11,padding:"5px 12px"}},"▶ Simulate")
           ),
-          motionLog.slice(0,12).map((m,i)=>h("div",{key:m.id,style:{display:"flex",alignItems:"center",gap:14,padding:"10px 0",borderBottom:i<Math.min(motionLog.length,12)-1?`1px solid ${T.border}22`:"none"}},
-            h("span",{style:{fontSize:12,fontFamily:"'IBM Plex Mono'",color:T.textMuted,minWidth:70}},m.time),
-            h("span",{style:{fontSize:18}},m.img),
-            h(Badge,{text:m.cam,color:T.purple}),
-            h("span",{style:{fontSize:13,flex:1}},m.type+" detected"),
-            h(Badge,{text:m.severity,color:sevColor[m.severity]})
-          ))
+          h("div",{style:{position:"relative",paddingLeft:28}},
+            h("div",{style:{position:"absolute",left:10,top:4,bottom:4,width:2,background:"linear-gradient(to bottom,var(--teal),var(--blue))",borderRadius:2,opacity:.35}}),
+            motionLog.slice(0,12).map((m,i)=>h("div",{key:m.id,style:{
+              position:"relative",display:"flex",alignItems:"flex-start",gap:12,
+              padding:"8px 8px 8px 0",marginBottom:i<Math.min(motionLog.length,12)-1?4:0,
+              borderRadius:"var(--radius-sm)",
+              background:m.severity==="high"?"rgba(239,68,68,0.06)":"transparent",
+              border:m.severity==="high"?"1px solid rgba(239,68,68,0.12)":"1px solid transparent",
+            }},
+              h("div",{style:{
+                position:"absolute",left:-22,top:10,
+                width:14,height:14,borderRadius:"50%",flexShrink:0,
+                background:sevColor[m.severity]||"var(--blue)",
+                border:"2px solid var(--bg-card)",
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,zIndex:1,
+              }},m.img),
+              h("div",{style:{flex:1,minWidth:0}},
+                h("div",{style:{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:2}},
+                  h("span",{style:{fontSize:12,fontWeight:700,color:"var(--text)"}},m.cam),
+                  h("span",{className:`badge badge-${m.severity==="high"?"danger":m.severity==="medium"?"warn":"success"}`,style:{fontSize:9,padding:"1px 6px"}},m.severity),
+                  h("span",{style:{fontSize:11,color:"var(--text-muted)"}},"• "+m.type)
+                ),
+                h("span",{style:{fontSize:10,fontFamily:"'IBM Plex Mono',monospace",color:"var(--text-dim)"}},m.time)
+              )
+            ))
+          )
         )
+
       ),
 
       /* ═══ ALERTS ═══ */
