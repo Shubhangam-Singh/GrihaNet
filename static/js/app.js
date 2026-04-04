@@ -1832,20 +1832,20 @@ function GrihaNet(){
                   h(Pie,{data:roomData,cx:"50%",cy:"50%",innerRadius:52,outerRadius:70,dataKey:"value",paddingAngle:3,strokeWidth:0,onClick:(d)=>setSelectedRoom(selectedRoom===d.name?null:d.name)},
                     roomData.map((r,i)=>h(Cell,{key:i,
                       fill:r.color,
-                      fillOpacity:selectedRoom&&selectedRoom!==r.name?0.3:1,
+                      fillOpacity:selectedRoom&&selectedRoom!==r.name?0.55:1,
                       style:{cursor:"pointer",outline:"none",
                         filter:selectedRoom===r.name?"drop-shadow(0 0 10px "+r.color+") brightness(1.15)":"none",
                         transition:"all .3s"}}))
                   ),
-                  h(Tooltip,{contentStyle:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:10,fontSize:12,color:"var(--text)"},formatter:(v,n)=>[v+"W",n]})
+                  h(Tooltip,{contentStyle:{background:T.card,border:"1px solid "+T.border,borderRadius:10,fontSize:12,color:T.text,padding:"6px 12px"},itemStyle:{color:T.text},labelStyle:{color:T.text,fontWeight:700},formatter:(v,n)=>[v+"W",n]})
                 )
               ),
               /* Custom legend */
               h("div",{style:{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center",marginTop:6}},
-                roomData.map((r,i)=>h("div",{key:i,onClick:()=>setSelectedRoom(selectedRoom===r.name?null:r.name),style:{display:"flex",alignItems:"center",gap:5,padding:"3px 8px",borderRadius:6,background:r.color+"10",border:`1px solid ${r.color}28`,opacity:selectedRoom&&selectedRoom!==r.name?.4:1,transition:"opacity .2s",cursor:"pointer"}},
+                roomData.map((r,i)=>h("div",{key:i,onClick:()=>setSelectedRoom(selectedRoom===r.name?null:r.name),style:{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:20,background:r.color+"25",border:"1px solid "+r.color+"66",opacity:selectedRoom&&selectedRoom!==r.name?.55:1,transition:"opacity .2s",cursor:"pointer"}},
                   h("span",{style:{width:7,height:7,borderRadius:"50%",background:r.color,flexShrink:0}}),
                   h("span",{style:{fontSize:10,fontWeight:700,color:r.color}},r.name),
-                  h("span",{style:{fontSize:10,color:"var(--text-dim)"}}," "+r.value+"W")
+                  h("span",{style:{fontSize:10,fontWeight:600,color:T.textSec}}," "+r.value+"W")
                 ))
               ),
               selectedRoom&&h("div",{style:{borderTop:"1px solid var(--border)",paddingTop:10,marginTop:8}},
