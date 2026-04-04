@@ -1094,38 +1094,100 @@ function ChatWidget({user, appliances, devices, cameras, alerts}){
   );
 }
 
-/* ─── VOICE COMMAND SIMULATOR ─── */
+/* ─── VOICE COMMAND HOOK ─── */
 function useVoiceCommands({appliances,setTab,toggleAppliance,addToast}){
   const [listening,setListening]=useState(false);
   const [transcript,setTranscript]=useState("");
   const [feedback,setFeedback]=useState(null);
+  const recogRef=useRef(null);
+
+  const TABS={overview:"overview",power:"power",network:"network",cameras:"cameras",camera:"cameras",alerts:"alerts",alert:"alerts",automations:"automations",automation:"automations",settings:"settings",setting:"settings",home:"overview"};
+
+  const showFeedback=(ok,msg)=>{
+    setFeedback({ok,msg});
+    setTimeout(()=>setFeedback(null),3000);
+    addToast(ok?"🎤":"❌",ok?"Voice Command":"Not understood",msg,ok?T.accent:T.orange);
+  };
+
+  const processCommand=useCallback((raw)=>{
+    const txt=raw.toLowerCase().trim();
+    setTranscript(txt);
+
+    // ─── Preset Routines ───
+    if(txt.includes("good morning")){
+      let count = 0;
+      appliances.forEach(a=>{
+        if(a.name.toLowerCase().includes("geyser")||a.name.toLowerCase().includes("kitchen")||a.name.toLowerCase().includes("bedroom light")) { if(!a.on){ toggleAppliance(a.id); count++; } }
+        else if(a.name.toLowerCase().includes("outside")) { if(a.on) toggleAppliance(a.id); }
+      });
+      showFeedback(true,"Good morning! Preparing home.");return;
+    }
+    if(txt.includes("good night")||txt.includes("sleep")){
+      appliances.forEach(a=>{
+        if(!a.name.toLowerCase().includes("router")&&!a.name.toLowerCase().includes("fridge")) { if(a.on) toggleAppliance(a.id); }
+      });
+      showFeedback(true,"Good night! Sleeping mode activated.");return;
+    }
+    if(txt.includes("eco mode")||txt.includes("power save")){
+      appliances.forEach(a=>{
+        if(a.name.toLowerCase().includes("tv")||a.name.toLowerCase().includes("geyser")||a.name.toLowerCase().includes("ac")) { if(a.on) toggleAppliance(a.id); }
+      });
+      showFeedback(true,"Eco mode activated. Heavy appliances off.");return;
+    }
+
+    // ─── Tab navigation ───
+    const navMatch=txt.match(/(?:show|go to|navigate to|open)\s+(\w+)/);
+    if(navMatch){
+      const dest=TABS[navMatch[1]];
+      if(dest){setTab(dest);showFeedback(true,`Navigating to ${navMatch[1]}`);return;}
+    }
+    for(const [word,id] of Object.entries(TABS)){
+      if(txt===word||txt===word+"s"){setTab(id);showFeedback(true,`Switched to ${id}`);return;}
+    }
+
+    // ─── Appliance toggle ───
+    const onMatch=txt.match(/turn on(?:\s+the)?\s+(.+)/);
+    const offMatch=txt.match(/turn off(?:\s+the)?\s+(.+)/);
+    const target=onMatch?onMatch[1]:offMatch?offMatch[1]:null;
+    const wantOn=!!onMatch;
+    if(target){
+      if(target==="everything"||target==="all"){
+        appliances.forEach(a=>{if(a.on!==wantOn)toggleAppliance(a.id);});
+        showFeedback(true,wantOn?"Turning on everything":"Turning off everything");return;
+      }
+      if(target.includes("light")||target.includes("lights")){
+        const lights=appliances.filter(a=>a.name.toLowerCase().includes("light")||a.name.toLowerCase().includes("tube")||a.name.toLowerCase().includes("lamp"));
+        lights.forEach(a=>{if(a.on!==wantOn)toggleAppliance(a.id);});
+        showFeedback(true,(wantOn?"Turning on":"Turning off")+` ${lights.length} light(s)`);return;
+      }
+      const found=appliances.find(a=>a.name.toLowerCase().includes(target)||target.includes(a.name.toLowerCase().split(" ")[0].toLowerCase()));
+      if(found){
+        if(found.on!==wantOn)toggleAppliance(found.id);
+        showFeedback(true,`${wantOn?"Turning on":"Turning off"} ${found.name}`);return;
+      }
+      showFeedback(false,`Couldn't find "${target}"`);return;
+    }
+
+    showFeedback(false,`"${txt}" — try: "turn on geyser" or "eco mode"`);
+  },[appliances,setTab,toggleAppliance]);
 
   const startListening=useCallback(()=>{
-    if(listening) return;
-    setListening(true);
-    setTranscript("Listening...");
-    setFeedback(null);
-    
-    // Simulate flow
-    setTimeout(() => {
-      setTranscript("Processing...");
-      setTimeout(() => {
-        // Execute Action: Turn off all appliances
-        appliances.forEach(a=>{if(a.on) toggleAppliance(a.id);});
-        
-        setTranscript("Turning off all devices.");
-        setFeedback({ok:true,msg:"Executed successfully"});
-        addToast("🎤","Voice Command","Turned off all devices",T.accent);
-        
-        setTimeout(() => {
-          setListening(false);
-          setTranscript("");
-          setFeedback(null);
-        }, 2000);
-      }, 1500);
-    }, 1800);
-
-  },[listening, appliances, toggleAppliance, addToast]);
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){addToast("❌","Not supported","Your browser does not support voice commands",T.red);return;}
+    if(listening){recogRef.current&&recogRef.current.stop();setListening(false);return;}
+    const r=new SR();
+    r.continuous=false;r.interimResults=true;r.lang="en-IN";
+    r.onstart=()=>setListening(true);
+    r.onresult=(e)=>{
+      const t=Array.from(e.results).map(x=>x[0].transcript).join(" ");
+      setTranscript(t);
+      if(e.results[e.results.length-1].isFinal)processCommand(t);
+    };
+    r.onerror=()=>setListening(false);
+    r.onend=()=>{setListening(false);setTranscript("");};
+    r.start();
+    recogRef.current=r;
+  },[listening,processCommand,addToast]);
 
   return {listening,transcript,feedback,startListening};
 }
@@ -1534,13 +1596,17 @@ function GrihaNet(){
       )
     ),
     /* VOICE FEEDBACK OVERLAY */
-    (listening||feedback)&&h("div",{style:{position:"fixed",inset:0,background:"rgba(10,15,26,0.65)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",zIndex:5000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",animation:"fadeIn .3s ease"}},
-      h("div",{style:{fontSize:72,marginBottom:32,animation:listening&&!feedback?"pulse 1.2s infinite":"none"}},listening&&!feedback?"🎙️":feedback?.ok?"✅":"❌"),
-      h("div",{style:{fontSize:28,fontWeight:700,color:"#fff",marginBottom:16,textAlign:"center",letterSpacing:"-0.5px"}},
-        transcript||"Listening..."
-      ),
-      h("div",{style:{display:"flex",gap:6,height:40,alignItems:"center"}},
-        listening&&!feedback && [1,2,3,4,5,6].map(i=>h("div",{key:i,style:{width:4,height:10+Math.abs(Math.sin((Date.now()/200)*i)*25),background:"var(--teal)",borderRadius:2,transition:"height 0.1s linear"}}))
+    (listening||feedback)&&h("div",{style:{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",
+      background:"var(--bg-card)",border:`1px solid ${listening?T.accent:feedback?.ok?T.accent:T.orange}`,
+      borderRadius:16,padding:"14px 24px",zIndex:5000,boxShadow:"0 8px 32px rgba(0,0,0,.4)",
+      display:"flex",alignItems:"center",gap:12,minWidth:260,maxWidth:420,
+      animation:"slideDown .3s ease"}},
+      h("div",{style:{fontSize:24,animation:listening?"pulse 1s infinite":"none"}},listening?"🎤":feedback?.ok?"✅":"❌"),
+      h("div",null,
+        h("div",{style:{fontSize:13,fontWeight:700,color:"var(--text)"}},
+          listening?(transcript||"Listening… speak now"):feedback?.msg),
+        listening&&h("div",{style:{fontSize:11,color:"var(--text-muted)",marginTop:2}},
+          'Try: "good night" • "eco mode" • "turn on lights"')
       )
     ),
     /* ═══ TAB NAV — sticky below header ═══ */
