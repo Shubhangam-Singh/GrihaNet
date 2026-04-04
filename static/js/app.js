@@ -1325,32 +1325,88 @@ function GrihaNet(){
   if(user?.role==="admin") tabs.push({id:"admin",icon:"🛡️",label:"Admin",tooltip:"Admin control panel"});
   tabs.push({id:"settings",icon:"⚙️",label:"Settings",tooltip:"App preferences & reports"});
 
-  return h("div",{style:{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif"}},
+  return h("div",{style:{minHeight:"100vh",background:"var(--bg)",color:"var(--text)",fontFamily:"'DM Sans',sans-serif"}},
     h(Toast,{toasts,onDismiss:dismissToast}),
-    /* HEADER */
-    h("header",{style:{background:T.surface+"ee",borderBottom:`1px solid ${T.border}`,padding:"12px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(16px)"}},
+
+    /* ═══ HEADER — fixed frosted glass bar ═══ */
+    h("header",{
+      style:{
+        position:"fixed",top:0,left:0,right:0,height:60,zIndex:1000,
+        background:"rgba(10,15,26,0.88)",
+        backdropFilter:"blur(20px) saturate(180%)",
+        WebkitBackdropFilter:"blur(20px) saturate(180%)",
+        borderBottom:"1px solid var(--border)",
+        display:"flex",alignItems:"center",justifyContent:"space-between",
+        padding:"0 24px",
+      }
+    },
+      /* Left — logo */
       h("div",{style:{display:"flex",alignItems:"center",gap:10}},
-        h("div",{style:{width:36,height:36,borderRadius:10,background:T.gradient1,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}},"🏠"),
-        h("div",null,h("div",{style:{fontSize:17,fontWeight:700}},"Griha",h("span",{style:{color:T.accent}},"Net")),h("div",{style:{fontSize:10,color:T.textMuted,letterSpacing:.5}},"SMART HOME MONITOR"))
+        h("div",{style:{
+          width:34,height:34,borderRadius:10,flexShrink:0,
+          background:"linear-gradient(135deg,var(--teal),var(--blue))",
+          display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,
+          boxShadow:"var(--shadow-teal)"
+        }},"🏠"),
+        h("div",null,
+          h("div",{style:{fontSize:20,fontWeight:700,color:"var(--teal)",lineHeight:1.1,letterSpacing:-0.3}},"GrihaNet"),
+          h("div",{style:{fontSize:11,color:"var(--text-dim)",letterSpacing:0.4}},"Smart Home Monitor")
+        )
       ),
-      h("div",{style:{display:"flex",alignItems:"center",gap:14}},
-        settings.simulationMode&&h(Badge,{text:"SIMULATION",color:T.orange}),
-        h("div",{style:{position:"relative",cursor:"pointer"},onClick:()=>setTab("alerts")},h("span",{style:{fontSize:18}},"🔔"),unreadAlerts>0&&h("span",{style:{position:"absolute",top:-4,right:-6,width:16,height:16,borderRadius:"50%",background:T.red,fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,color:"#fff",animation:"pulse 2s infinite"}},unreadAlerts)),
-        h("div",{style:{textAlign:"right"}},h("div",{style:{fontSize:13,fontFamily:"'IBM Plex Mono'",fontWeight:500}},now.toLocaleTimeString()),h("div",{style:{fontSize:10,color:T.textMuted}},now.toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short",year:"numeric"}))),
-        /* 🎤 MIC BUTTON */
-        h("div",{onClick:startListening,title:listening?"Stop listening":"Start voice command",
-          style:{width:34,height:34,borderRadius:"50%",
-            background:listening?T.red+"33":T.accentDim,
-            border:`1px solid ${listening?T.red:T.accent}`,
-            display:"flex",alignItems:"center",justifyContent:"center",
-            cursor:"pointer",fontSize:16,
-            animation:listening?"pulse 1.2s infinite":"none",
-            transition:"all .2s"}},listening?"🔴":"🎤"),
-        h("div",{onClick:fetchAll,title:"Refresh data",
-          style:{width:34,height:34,borderRadius:"50%",background:T.surface,border:`1px solid ${T.border}`,
-            display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:15,
-            transition:"all .2s"}},"🔄"),
-        h("div",{onClick:doLogout,style:{width:34,height:34,borderRadius:"50%",background:T.redDim,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14},title:"Logout"},"🚪")
+
+      /* Right — controls */
+      h("div",{style:{display:"flex",alignItems:"center",gap:12}},
+        /* Simulation badge */
+        settings.simulationMode&&h("span",{className:"badge badge-warn"},"Simulation"),
+
+        /* Clock */
+        h("div",{style:{textAlign:"right"}},
+          h("div",{style:{fontSize:13,fontFamily:"'IBM Plex Mono'",fontWeight:500,color:"var(--text)"}},now.toLocaleTimeString()),
+          h("div",{style:{fontSize:10,color:"var(--text-dim)"}},now.toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"}))
+        ),
+
+        /* Mic button */
+        h("button",{onClick:startListening,title:listening?"Stop":"Voice command",style:{
+          width:34,height:34,borderRadius:"50%",border:`1px solid ${listening?"var(--danger)":"var(--border)"}`,
+          background:listening?"rgba(239,68,68,0.15)":"var(--bg-card)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          cursor:"pointer",fontSize:15,animation:listening?"pulse 1.2s infinite":"none",transition:"var(--transition)"
+        }},listening?"🔴":"🎤"),
+
+        /* Refresh */
+        h("button",{onClick:fetchAll,title:"Refresh",style:{
+          width:34,height:34,borderRadius:"50%",border:"1px solid var(--border)",
+          background:"var(--bg-card)",display:"flex",alignItems:"center",justifyContent:"center",
+          cursor:"pointer",fontSize:14,transition:"var(--transition)"
+        }},"🔄"),
+
+        /* Bell */
+        h("button",{onClick:()=>setTab("alerts"),title:"Alerts",style:{
+          position:"relative",width:34,height:34,borderRadius:"50%",
+          border:unreadAlerts>0?"1px solid rgba(239,68,68,0.4)":"1px solid var(--border)",
+          background:unreadAlerts>0?"rgba(239,68,68,0.1)":"var(--bg-card)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          cursor:"pointer",fontSize:15,transition:"var(--transition)"
+        }},
+          "🔔",
+          unreadAlerts>0&&h("span",{
+            className:"pulse",
+            style:{position:"absolute",top:-3,right:-3,minWidth:16,height:16,borderRadius:8,
+              background:"var(--danger)",color:"#fff",fontSize:9,fontWeight:700,
+              display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}
+          },unreadAlerts)
+        ),
+
+        /* User avatar */
+        h("div",{onClick:doLogout,title:`Logout (${user?.name||"user"})`,style:{
+          width:34,height:34,borderRadius:"50%",
+          background:"linear-gradient(135deg,var(--teal),var(--blue))",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          cursor:"pointer",fontSize:14,fontWeight:700,color:"#0A0F1A",
+          boxShadow:"var(--shadow-teal)",flexShrink:0
+        }},
+          (user?.name||"U").charAt(0).toUpperCase()
+        )
       )
     ),
     /* VOICE FEEDBACK OVERLAY */
@@ -1367,18 +1423,141 @@ function GrihaNet(){
           'Try: "turn on geyser" • "show power" • "turn off lights"')
       )
     ),
-    /* TABS */
-    h("nav",{style:{display:"flex",gap:4,padding:"10px 20px",overflowX:"auto"}},tabs.map(t=>h(TabBtn,{key:t.id,active:tab===t.id,icon:t.icon,label:t.label,count:t.count,onClick:()=>setTab(t.id),tooltip:t.tooltip}))),
-    /* CONTENT */
-    h("main",{style:{padding:"16px 20px 32px",maxWidth:1200,margin:"0 auto"}},
+    /* ═══ TAB NAV — sticky below header ═══ */
+    h("nav",{
+      style:{
+        position:"sticky",top:60,zIndex:900,
+        display:"flex",alignItems:"center",
+        background:"var(--bg)",borderBottom:"1px solid var(--border)",
+        overflowX:"auto",paddingLeft:8,paddingRight:8,gap:0,
+      }
+    },
+      tabs.map(t=>h("button",{
+        key:t.id,
+        onClick:()=>setTab(t.id),
+        "data-tooltip":t.tooltip,
+        style:{
+          padding:"0 20px",height:48,
+          fontSize:13,fontWeight:600,
+          border:"none",borderBottom:tab===t.id?"2px solid var(--teal)":"2px solid transparent",
+          background:"transparent",
+          color:tab===t.id?"var(--teal)":"var(--text-muted)",
+          cursor:"pointer",whiteSpace:"nowrap",
+          display:"flex",alignItems:"center",gap:6,
+          transition:"color .15s ease, border-color .15s ease, background .15s ease",
+          fontFamily:"'DM Sans',sans-serif",
+          position:"relative",
+        },
+        onMouseEnter:e=>{
+          if(tab!==t.id){
+            e.currentTarget.style.color="var(--text)";
+            e.currentTarget.style.background="var(--teal-glow)";
+          }
+        },
+        onMouseLeave:e=>{
+          if(tab!==t.id){
+            e.currentTarget.style.color="var(--text-muted)";
+            e.currentTarget.style.background="transparent";
+          }
+        },
+      },
+        h("span",{style:{fontSize:15}},t.icon),
+        t.label,
+        t.count>0&&h("span",{
+          className:"badge badge-danger",
+          style:{marginLeft:2,fontSize:"0.6rem",padding:"0.1rem 0.45rem"}
+        },t.count)
+      ))
+    ),
+    /* CONTENT — push below fixed header (60px) + sticky tab nav (48px) */
+    h("main",{style:{padding:"20px 24px 40px",maxWidth:1280,margin:"0 auto",paddingTop:"128px"}},
 
       /* ═══ OVERVIEW ═══ */
       tab==="overview"&&h(React.Fragment,null,
-        h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12,marginBottom:16}},
-        h("div",{className:"fadeUp d1","data-tooltip":"Real-time electricity usage",onClick:()=>setTab("power"),title:"Go to Power",style:{cursor:"pointer"}},h(Stat,{label:"Live Power Draw",value:liveKw,unit:"kW",icon:"⚡",color:parseFloat(liveKw)>settings.highUsageThreshold?T.red:T.orange,trend:{text:`${liveWatts}W from ${appliances.filter(a=>a.on).length} appliances`,good:parseFloat(liveKw)<=settings.highUsageThreshold}})),
-          h("div",{className:"fadeUp d2","data-tooltip":"Total energy used today",onClick:()=>setTab("power"),title:"Go to Power",style:{cursor:"pointer"}},h(Stat,{label:"Today's Usage",value:todayKwh,unit:"kWh",icon:"📊",color:T.blue,sub:`Est. cost: ₹${todayCost}`})),
-          h("div",{className:"fadeUp d3","data-tooltip":"Devices on your network",onClick:()=>setTab("network"),title:"Go to Network",style:{cursor:"pointer"}},h(Stat,{label:"Devices Online",value:onlineCount,unit:`/ ${devices.length}`,icon:"📡",color:T.purple,sub:`${totalBw} GB used today`})),
-          h("div",{className:"fadeUp d4","data-tooltip":"Active security cameras",onClick:()=>setTab("cameras"),title:"Go to Cameras",style:{cursor:"pointer"}},h(Stat,{label:"Cameras Active",value:activeCams,unit:`/ ${cameras.length}`,icon:"📹",color:T.accent,sub:`${totalMotion} motion events`}))
+        /* Stat cards row */
+        h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:14,marginBottom:20}},
+
+          /* Card 1 — Live Power (pulsing dot) */
+          h("div",{className:"stat-card fadeUp d1",onClick:()=>setTab("power"),style:{cursor:"pointer"},"data-tooltip":"Real-time electricity usage"},
+            /* bg blob */
+            h("div",{style:{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",background:(parseFloat(liveKw)>settings.highUsageThreshold?"var(--danger)":"var(--warn)")+"10",pointerEvents:"none"}}),
+            h("div",{style:{position:"relative"}},
+              /* Top row */
+              h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+                h("span",{style:{fontSize:22}},"⚡"),
+                h("span",{className:"section-title"},"Live Power")
+              ),
+              /* Value row with live dot */
+              h("div",{style:{display:"flex",alignItems:"baseline",gap:6,marginBottom:8}},
+                h("span",{className:"live-dot",style:{marginBottom:2}}),
+                h("span",{style:{fontSize:32,fontWeight:700,fontFamily:"'IBM Plex Mono'",color:parseFloat(liveKw)>settings.highUsageThreshold?"var(--danger)":"var(--warn)",lineHeight:1}},liveKw),
+                h("span",{style:{fontSize:13,color:"var(--text-muted)",fontWeight:500}},"kW")
+              ),
+              /* Bottom row */
+              h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                h("span",{style:{fontSize:12,color:"var(--text-dim)"}},liveWatts+"W · "+appliances.filter(a=>a.on).length+" appliances"),
+                h("span",{className:"badge "+(parseFloat(liveKw)<=settings.highUsageThreshold?"badge-success":"badge-danger")},
+                  parseFloat(liveKw)<=settings.highUsageThreshold?"Normal":"High")
+              )
+            )
+          ),
+
+          /* Card 2 — Today's Usage */
+          h("div",{className:"stat-card fadeUp d2",onClick:()=>setTab("power"),style:{cursor:"pointer"},"data-tooltip":"Total energy consumed today"},
+            h("div",{style:{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",background:"rgba(59,130,246,0.08)",pointerEvents:"none"}}),
+            h("div",{style:{position:"relative"}},
+              h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+                h("span",{style:{fontSize:22}},"📊"),
+                h("span",{className:"section-title"},"Today's Usage")
+              ),
+              h("div",{style:{display:"flex",alignItems:"baseline",gap:4,marginBottom:8}},
+                h("span",{style:{fontSize:32,fontWeight:700,fontFamily:"'IBM Plex Mono'",color:"var(--blue)",lineHeight:1}},todayKwh),
+                h("span",{style:{fontSize:13,color:"var(--text-muted)",fontWeight:500}},"kWh")
+              ),
+              h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                h("span",{style:{fontSize:12,color:"var(--text-dim)"}},"Est. cost"),
+                h("span",{style:{fontSize:13,fontWeight:700,color:"var(--text)"}},"₹"+todayCost)
+              )
+            )
+          ),
+
+          /* Card 3 — Devices Online */
+          h("div",{className:"stat-card fadeUp d3",onClick:()=>setTab("network"),style:{cursor:"pointer"},"data-tooltip":"Connected network devices"},
+            h("div",{style:{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",background:"rgba(139,92,246,0.08)",pointerEvents:"none"}}),
+            h("div",{style:{position:"relative"}},
+              h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+                h("span",{style:{fontSize:22}},"📡"),
+                h("span",{className:"section-title"},"Devices Online")
+              ),
+              h("div",{style:{display:"flex",alignItems:"baseline",gap:4,marginBottom:8}},
+                h("span",{style:{fontSize:32,fontWeight:700,fontFamily:"'IBM Plex Mono'",color:"var(--purple)",lineHeight:1}},onlineCount),
+                h("span",{style:{fontSize:13,color:"var(--text-muted)",fontWeight:500}},"/ "+devices.length)
+              ),
+              h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                h("span",{style:{fontSize:12,color:"var(--text-dim)"}},"Bandwidth today"),
+                h("span",{style:{fontSize:13,fontWeight:700,color:"var(--text)"}},totalBw+" GB")
+              )
+            )
+          ),
+
+          /* Card 4 — Cameras */
+          h("div",{className:"stat-card fadeUp d4",onClick:()=>setTab("cameras"),style:{cursor:"pointer"},"data-tooltip":"Security cameras active"},
+            h("div",{style:{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",background:"var(--teal-glow)",pointerEvents:"none"}}),
+            h("div",{style:{position:"relative"}},
+              h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+                h("span",{style:{fontSize:22}},"📹"),
+                h("span",{className:"section-title"},"Cameras Active")
+              ),
+              h("div",{style:{display:"flex",alignItems:"baseline",gap:4,marginBottom:8}},
+                h("span",{style:{fontSize:32,fontWeight:700,fontFamily:"'IBM Plex Mono'",color:"var(--teal)",lineHeight:1}},activeCams),
+                h("span",{style:{fontSize:13,color:"var(--text-muted)",fontWeight:500}},"/ "+cameras.length)
+              ),
+              h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                h("span",{style:{fontSize:12,color:"var(--text-dim)"}},"Motion events"),
+                h("span",{style:{fontSize:13,fontWeight:700,color:"var(--text)"}},totalMotion)
+              )
+            )
+          )
         ),
         h("div",{style:{display:"grid",gridTemplateColumns:"2fr 1fr",gap:14,marginBottom:14}},
           h(Card,{className:"fadeUp d3"},
