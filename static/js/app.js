@@ -226,19 +226,19 @@ function Toast({toasts,onDismiss}){
   return h("div",{style:{
     position:"fixed",top:72,left:"50%",transform:"translateX(-50%)",
     zIndex:9998,display:"flex",flexDirection:"column",gap:8,
-    alignItems:"center",pointerEvents:"none",width:"max-content",maxWidth:380,
+    alignItems:"center",pointerEvents:"none",width:"max-content",maxWidth:400,
   }},
     toasts.map(t=>h("div",{key:t.id,
       style:{
         pointerEvents:"all",position:"relative",overflow:"hidden",
         display:"flex",alignItems:"center",gap:12,
-        padding:"12px 16px",minWidth:280,
-        background:"rgba(17,24,39,0.88)",
-        backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",
+        padding:"12px 16px",minWidth:290,
+        background:"var(--bg-card)",
+        backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
         border:"1px solid var(--border)",
         borderLeft:`3px solid ${t.color||"var(--teal)"}`,
         borderRadius:"var(--radius-sm)",
-        boxShadow:"0 8px 32px rgba(0,0,0,0.5)",
+        boxShadow:"0 8px 32px rgba(0,0,0,0.22)",
         animation:"toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
       }
     },
@@ -254,7 +254,7 @@ function Toast({toasts,onDismiss}){
       /* Progress countdown bar */
       h("div",{style:{
         position:"absolute",bottom:0,left:0,height:2,
-        background:t.color||"var(--teal)",opacity:.6,
+        background:t.color||"var(--teal)",opacity:.7,
         animation:"shrink 3.5s linear forwards",
       }})
     ))
@@ -1828,11 +1828,11 @@ function GrihaNet(){
               ),
               /* Donut */
               h(ResponsiveContainer,{width:"100%",height:160},
-                h(PieChart,null,
+                h(PieChart,{style:{background:"transparent"}},
                   h(Pie,{data:roomData,cx:"50%",cy:"50%",innerRadius:52,outerRadius:70,dataKey:"value",paddingAngle:3,strokeWidth:0,onClick:(d)=>setSelectedRoom(selectedRoom===d.name?null:d.name)},
                     roomData.map((r,i)=>h(Cell,{key:i,
                       fill:r.color,
-                      opacity:selectedRoom&&selectedRoom!==r.name?0.35:1,
+                      fillOpacity:selectedRoom&&selectedRoom!==r.name?0.3:1,
                       style:{cursor:"pointer",outline:"none",
                         filter:selectedRoom===r.name?"drop-shadow(0 0 10px "+r.color+") brightness(1.15)":"none",
                         transition:"all .3s"}}))
