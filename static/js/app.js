@@ -408,6 +408,8 @@ function SpeedTest(){
   const [running,setRunning]=useState(false);
   const [progress,setProgress]=useState(0);
   const [result,setResult]=useState(null);
+  const h=React.createElement;
+
   const runTest=async()=>{
     setRunning(true);setProgress(0);setResult(null);
     let p=0;
@@ -416,32 +418,70 @@ function SpeedTest(){
     clearInterval(iv);setProgress(100);
     setTimeout(()=>{setResult(data||{download:75.2,upload:38.1,ping:12});setRunning(false);},400);
   };
-  return React.createElement(Card,{style:{marginTop:14}},
-    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},
-      React.createElement("div",{style:{fontSize:14,fontWeight:600}},"🚀 Speed Test"),
-      React.createElement("button",{onClick:runTest,disabled:running,style:{padding:"8px 18px",borderRadius:8,border:"none",background:running?T.border:T.gradient1,color:running?T.textMuted:"#000",fontSize:12,fontWeight:700,cursor:running?"default":"pointer",fontFamily:"'DM Sans'"}},running?"Testing...":result?"Re-run":"Run Test")
-    ),
-    running&&React.createElement("div",{style:{marginBottom:12}},
-      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:6}},
-        React.createElement("span",{style:{fontSize:11,color:T.textSec}},"Testing connection..."),
-        React.createElement("span",{style:{fontSize:11,color:T.accent,fontFamily:"'IBM Plex Mono'"}},progress.toFixed(0)+"%")
+
+  /* Speed quality helpers */
+  const dlColor=(v)=>v>=50?"var(--success)":v>=20?"var(--warn)":"var(--danger)";
+  const ulColor=(v)=>v>=20?"var(--success)":v>=10?"var(--warn)":"var(--danger)";
+  const pingColor=(v)=>v<=20?"var(--success)":v<=60?"var(--warn)":"var(--danger)";
+
+  const metrics=[
+    {label:"Download",unit:"Mbps",icon:"⬇️",valKey:"download",colorFn:dlColor},
+    {label:"Upload",unit:"Mbps",icon:"⬆️",valKey:"upload",colorFn:ulColor},
+    {label:"Ping",unit:"ms",icon:"📡",valKey:"ping",colorFn:pingColor},
+  ];
+
+  return h(Card,{className:"fadeUp d5",style:{marginTop:14}},
+    h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
+      h("div",null,
+        h("div",{style:{fontSize:14,fontWeight:700}},"🚀 Speed Test"),
+        h("div",{style:{fontSize:11,color:"var(--text-dim)",marginTop:2}},result?"Last result · tap Re-run to refresh":"Test your connection speed")
       ),
-      React.createElement("div",{style:{height:6,background:T.border,borderRadius:3,overflow:"hidden"}},
-        React.createElement("div",{style:{height:"100%",width:progress+"%",background:T.gradient1,borderRadius:3,transition:"width .2s"}})
+      h("button",{onClick:runTest,disabled:running,className:"btn "+(running?"btn-ghost":"btn-primary"),style:{fontSize:12}},
+        running?"Testing…":result?"Re-run":"Run Test")
+    ),
+
+    /* Progress bar while running */
+    running&&h("div",{style:{marginBottom:16}},
+      h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:6}},
+        h("span",{style:{fontSize:11,color:"var(--text-muted)"}},"Testing connection…"),
+        h("span",{style:{fontSize:11,color:"var(--teal)",fontFamily:"'IBM Plex Mono'"}},""+progress.toFixed(0)+"%")
+      ),
+      h("div",{style:{height:5,background:"var(--border)",borderRadius:3,overflow:"hidden"}},
+        h("div",{style:{height:"100%",width:progress+"%",background:"linear-gradient(90deg,var(--teal),var(--blue))",borderRadius:3,transition:"width .18s ease"}})
       )
     ),
-    result&&React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}},
-      [{label:"Download",val:result.download,unit:"Mbps",color:T.blue,icon:"⬇️"},
-       {label:"Upload",val:result.upload,unit:"Mbps",color:T.purple,icon:"⬆️"},
-       {label:"Ping",val:result.ping,unit:"ms",color:T.accent,icon:"📡"}
-      ].map((r,i)=>React.createElement("div",{key:i,style:{textAlign:"center",padding:"14px 0",borderRadius:10,background:r.color+"0a",border:`1px solid ${r.color}20`}},
-        React.createElement("div",{style:{fontSize:14}},r.icon),
-        React.createElement("div",{style:{fontSize:22,fontWeight:700,color:r.color,fontFamily:"'IBM Plex Mono'",marginTop:4}},r.val),
-        React.createElement("div",{style:{fontSize:10,color:T.textMuted}},r.unit),
-        React.createElement("div",{style:{fontSize:10,color:T.textSec,marginTop:2}},r.label)
-      ))
-    ),
-    !running&&!result&&React.createElement("div",{style:{fontSize:12,color:T.textMuted,textAlign:"center",padding:"20px 0"}},"Click \"Run Test\" to check your internet speed")
+
+    /* Metric cards — idle / running / done */
+    h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}},
+      metrics.map((m,i)=>{
+        const val=result?result[m.valKey]:null;
+        const color=val!=null?m.colorFn(val):"var(--text-dim)";
+        return h("div",{key:i,style:{
+          textAlign:"center",padding:"16px 8px",borderRadius:"var(--radius-sm)",
+          background:val!=null?color+"12":"var(--bg-input)",
+          border:`1px solid ${val!=null?color+"30":"var(--border)"}`,
+          transition:"all .3s ease",
+        }},
+          h("div",{style:{fontSize:18,marginBottom:6}},m.icon),
+          running
+            /* Spinner */
+            ? h("div",{style:{
+                width:28,height:28,border:"3px solid var(--border)",
+                borderTop:`3px solid var(--teal)`,
+                borderRadius:"50%",margin:"6px auto",
+                animation:"spin .7s linear infinite"
+              }})
+            : h("div",{style:{
+                fontSize:val!=null?26:20,fontWeight:700,
+                fontFamily:"'IBM Plex Mono',monospace",
+                color,lineHeight:1,minHeight:32,
+                display:"flex",alignItems:"center",justifyContent:"center"
+              }},val!=null?val:"—"),
+          h("div",{style:{fontSize:9,color:"var(--text-dim)",marginTop:4,letterSpacing:.5,textTransform:"uppercase"}},m.unit),
+          h("div",{style:{fontSize:10,color:"var(--text-muted)",marginTop:2,fontWeight:600}},m.label)
+        );
+      })
+    )
   );
 }
 
@@ -1804,19 +1844,103 @@ function GrihaNet(){
       /* ═══ NETWORK ═══ */
 
       tab==="network"&&h(React.Fragment,null,
+        /* Stat cards */
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12,marginBottom:16}},
-          h("div",{className:"fadeUp d1"},h(Stat,{label:"Bandwidth Used",value:totalBw,unit:"GB today",icon:"📊",color:T.blue})),
-          h("div",{className:"fadeUp d2"},h(Stat,{label:"Devices Online",value:onlineCount,unit:`/ ${devices.length}`,icon:"📡",color:T.accent})),
-          h("div",{className:"fadeUp d3"},h(Stat,{label:"Blocked Devices",value:devices.filter(d=>d.blocked).length,unit:"",icon:"🚫",color:T.red}))
+          h("div",{className:"fadeUp d1"},h(Stat,{label:"Bandwidth Used",value:totalBw,unit:"GB today",icon:"\uD83D\uDCCA",color:T.blue})),
+          h("div",{className:"fadeUp d2"},h(Stat,{label:"Devices Online",value:onlineCount,unit:`/ ${devices.length}`,icon:"\uD83D\uDCE1",color:T.accent})),
+          h("div",{className:"fadeUp d3"},h(Stat,{label:"Blocked Devices",value:devices.filter(d=>d.blocked).length,unit:"",icon:"\uD83D\uDEAB",color:T.red}))
         ),
-        h(Card,{style:{marginBottom:14},className:"fadeUp d3"},h("div",{style:{fontSize:14,fontWeight:600,marginBottom:14}},"📊 Bandwidth History (24hr)"),h(ResponsiveContainer,{width:"100%",height:200},h(BarChart,{data:bandwidthData},h(CartesianGrid,{strokeDasharray:"3 3",stroke:T.border}),h(XAxis,{dataKey:"hour",tick:{fontSize:9,fill:T.textMuted},interval:2,axisLine:false}),h(YAxis,{tick:{fontSize:9,fill:T.textMuted},axisLine:false,unit:" GB"}),h(Tooltip,{contentStyle:{background:"#182236",border:`1px solid ${T.border}`,borderRadius:8,fontSize:12,color:T.text},labelStyle:{color:T.text,fontWeight:600},itemStyle:{color:T.textSec}}),h(Bar,{dataKey:"down",fill:T.blue,radius:[4,4,0,0],name:"Download"}),h(Bar,{dataKey:"up",fill:T.purple,radius:[4,4,0,0],name:"Upload"})))),
+
+        /* Bandwidth chart — area with teal fill */
+        h(Card,{style:{marginBottom:14},className:"fadeUp d3"},
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},
+            h("div",{style:{fontSize:14,fontWeight:700}},"\uD83D\uDCCA Bandwidth History (24hr)"),
+            h("span",{className:"badge badge-teal"},"Real-time")
+          ),
+          h(ResponsiveContainer,{width:"100%",height:200},
+            h(AreaChart,{data:bandwidthData},
+              h("defs",null,
+                h("linearGradient",{id:"bwDown",x1:0,y1:0,x2:0,y2:1},
+                  h("stop",{offset:"0%",stopColor:"var(--teal)",stopOpacity:.25}),
+                  h("stop",{offset:"100%",stopColor:"var(--teal)",stopOpacity:0})
+                ),
+                h("linearGradient",{id:"bwUp",x1:0,y1:0,x2:0,y2:1},
+                  h("stop",{offset:"0%",stopColor:"var(--blue)",stopOpacity:.2}),
+                  h("stop",{offset:"100%",stopColor:"var(--blue)",stopOpacity:0})
+                )
+              ),
+              h(CartesianGrid,{strokeDasharray:"3 3",stroke:"#1E293B",vertical:false}),
+              h(XAxis,{dataKey:"hour",tick:{fontSize:9,fill:"var(--text-dim)"},interval:3,axisLine:false,tickLine:false}),
+              h(YAxis,{tick:{fontSize:9,fill:"var(--text-dim)"},axisLine:false,tickLine:false,unit:" GB"}),
+              h(Tooltip,{contentStyle:{background:"#111827",border:"1px solid #1E293B",borderRadius:10,fontSize:12,color:"#F1F5F9",padding:"10px 14px"},
+                labelStyle:{color:"var(--teal)",fontWeight:700},itemStyle:{color:"#94A3B8"},cursor:{fill:"rgba(0,229,160,0.04)"}}),
+              h(Area,{type:"monotone",dataKey:"down",stroke:"var(--teal)",strokeWidth:2,fill:"url(#bwDown)",name:"Download"}),
+              h(Area,{type:"monotone",dataKey:"up",stroke:"var(--blue)",strokeWidth:1.5,fill:"url(#bwUp)",name:"Upload"})
+            )
+          )
+        ),
+
+        /* Device list */
         h(Card,{className:"fadeUp d4"},
-          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},h("div",{style:{fontSize:14,fontWeight:600}},"📡 Connected Devices"),h(Badge,{text:onlineCount+" online",color:T.accent})),
-          h("input",{type:"text",placeholder:"Search by name, IP, or MAC…",value:deviceSearch,onChange:e=>setDeviceSearch(e.target.value),style:{width:"100%",padding:"9px 14px",borderRadius:8,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:12,fontFamily:"'DM Sans'",outline:"none",marginBottom:12}}),
-          devices.filter(d=>!deviceSearch||d.name.toLowerCase().includes(deviceSearch.toLowerCase())||d.ip.includes(deviceSearch)||d.mac.toLowerCase().includes(deviceSearch.toLowerCase())).map((d,i,arr)=>h("div",{key:d.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:i<arr.length-1?`1px solid ${T.border}22`:"none",opacity:d.online?1:.45}},
-            h("div",{style:{display:"flex",alignItems:"center",gap:12,flex:1}},h("span",{style:{fontSize:24}},devIcons[d.type]),h("div",{style:{flex:1}},h("div",{style:{fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8}},d.name,!d.wl&&h(Badge,{text:"⚠ unknown",color:T.orange}),d.blocked&&h(Badge,{text:"BLOCKED",color:T.red})),h("div",{style:{fontSize:10,color:T.textMuted,fontFamily:"'IBM Plex Mono'",marginTop:2}},d.ip+" • "+d.mac),h(ProgressBar,{value:d.bw,max:20,color:d.bw>settings.bandwidthThreshold?T.orange:T.blue}))),
-            h("div",{style:{display:"flex",alignItems:"center",gap:14}},h("div",{style:{textAlign:"right"}},h("div",{style:{fontSize:14,fontWeight:600,fontFamily:"'IBM Plex Mono'",color:d.online?T.blue:T.textMuted}},d.online?d.bw+" GB":"—"),h("div",{style:{fontSize:10,color:d.online?T.accent:T.red,fontWeight:600}},d.blocked?"BLOCKED":d.online?"ONLINE":"OFFLINE")),h("button",{"data-tooltip":d.blocked?"Allow internet access":"Block from internet",onClick:()=>toggleDeviceBlock(d.id),style:{padding:"6px 12px",borderRadius:8,border:"none",fontSize:11,fontWeight:600,background:d.blocked?T.accentDim:T.redDim,color:d.blocked?T.accent:T.red,cursor:"pointer",fontFamily:"'DM Sans'"}},d.blocked?"Unblock":"Block"))
-          ))
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
+            h("div",{style:{fontSize:14,fontWeight:700}},"\uD83D\uDCE1 Connected Devices"),
+            h("span",{className:"badge badge-teal"},onlineCount+" online")
+          ),
+          /* Search bar with icon */
+          h("div",{style:{position:"relative",marginBottom:14}},
+            h("span",{style:{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"var(--text-dim)",pointerEvents:"none"}},"\uD83D\uDD0D"),
+            h("input",{type:"text",placeholder:"Search by name, IP, or MAC\u2026",className:"inp",value:deviceSearch,
+              onChange:e=>setDeviceSearch(e.target.value),
+              style:{paddingLeft:36}})
+          ),
+          /* Device rows */
+          devices.filter(d=>!deviceSearch||d.name.toLowerCase().includes(deviceSearch.toLowerCase())||d.ip.includes(deviceSearch)||d.mac.toLowerCase().includes(deviceSearch.toLowerCase())).map((d,i,arr)=>{
+            /* Icon circle color */
+            const iconBg={phone:"rgba(59,130,246,0.15)",laptop:"rgba(139,92,246,0.15)",tv:"rgba(0,229,160,0.12)",gaming:"rgba(245,158,11,0.15)",unknown:"rgba(239,68,68,0.15)"}[d.type]||"var(--bg-input)";
+            const iconColor={phone:"var(--blue)",laptop:"var(--purple)",tv:"var(--teal)",gaming:"var(--warn)",unknown:"var(--danger)"}[d.type]||"var(--text-muted)";
+            const bwColor=d.bw>settings.bandwidthThreshold?"var(--warn)":d.bw>5?"var(--blue)":"var(--success)";
+            return h("div",{key:d.id,style:{
+              display:"flex",justifyContent:"space-between",alignItems:"center",
+              padding:"12px 10px",borderRadius:"var(--radius-sm)",
+              marginBottom:i<arr.length-1?6:0,
+              background:!d.wl?"rgba(239,68,68,0.04)":d.blocked?"rgba(239,68,68,0.04)":"transparent",
+              border:`1px solid ${!d.wl||d.blocked?"rgba(239,68,68,0.12)":"transparent"}`,
+              opacity:d.online?1:.5,
+              transition:"background .15s",
+            }},
+              /* Left: icon circle + name/IP */
+              h("div",{style:{display:"flex",alignItems:"center",gap:12,flex:1,minWidth:0}},
+                h("div",{style:{
+                  width:40,height:40,borderRadius:"50%",flexShrink:0,
+                  background:iconBg,display:"flex",alignItems:"center",justifyContent:"center",
+                  fontSize:18,color:iconColor
+                }},devIcons[d.type]),
+                h("div",{style:{minWidth:0}},
+                  h("div",{style:{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}},
+                    h("span",{style:{fontSize:13,fontWeight:700,color:"var(--text)"}},d.name),
+                    !d.wl&&h("span",{className:"badge badge-danger"},"\u26A0 Unknown"),
+                    d.blocked&&h("span",{className:"badge badge-danger"},"Blocked")
+                  ),
+                  h("div",{style:{fontSize:11,color:"var(--text-dim)",fontFamily:"'IBM Plex Mono',monospace",marginTop:2}},d.ip)
+                )
+              ),
+              /* Right: bw pill + status + block btn */
+              h("div",{style:{display:"flex",alignItems:"center",gap:8,flexShrink:0}},
+                d.online&&h("span",{style:{
+                  fontSize:11,fontWeight:700,fontFamily:"'IBM Plex Mono',monospace",
+                  padding:"2px 8px",borderRadius:20,
+                  background:bwColor+"15",color:bwColor,border:`1px solid ${bwColor}30`
+                }},d.bw+" GB"),
+                h("span",{className:`badge ${d.blocked?"badge-danger":d.online?"badge-success":"badge-warn"}`},
+                  d.blocked?"Blocked":d.online?"Online":"Offline"),
+                h("button",{"data-tooltip":d.blocked?"Allow internet access":"Block from internet",
+                  onClick:()=>toggleDeviceBlock(d.id),
+                  className:`btn ${d.blocked?"btn-ghost":"btn-danger"}`,
+                  style:{fontSize:11,padding:"4px 10px"}},
+                  d.blocked?"Unblock":"Block")
+              )
+            );
+          })
         ),
         h(SpeedTest,null)
       ),
@@ -1913,26 +2037,110 @@ function GrihaNet(){
 
       /* ═══ ALERTS ═══ */
       tab==="alerts"&&h(React.Fragment,null,
-        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
-          h("div",null,h("h2",{style:{fontSize:18,fontWeight:700,margin:0}},"🔔 Alerts"),h("p",{style:{fontSize:12,color:T.textMuted,marginTop:2}},unreadAlerts+" unread of "+alerts.length)),
+
+        /* Header row */
+        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
+          h("div",null,
+            h("h2",{style:{fontSize:18,fontWeight:700,margin:0}},"\uD83D\uDD14 Alerts"),
+            h("p",{style:{fontSize:12,color:"var(--text-muted)",marginTop:2}},unreadAlerts+" unread of "+alerts.length)
+          ),
           h("div",{style:{display:"flex",gap:8}},
-            h("button",{"data-tooltip":"Mark every alert as seen",onClick:markAllRead,style:{padding:"8px 16px",borderRadius:8,border:`1px solid ${T.border}`,background:"transparent",color:T.textSec,fontSize:12,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600}},"Mark all read"),
-            h("button",{"data-tooltip":"Remove all dismissed alerts",onClick:clearRead,style:{padding:"8px 16px",borderRadius:8,border:`1px solid ${T.red}33`,background:T.redDim,color:T.red,fontSize:12,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600}},"Clear read")
+            h("button",{"data-tooltip":"Mark every alert as seen",onClick:markAllRead,className:"btn btn-ghost",style:{fontSize:12,padding:"6px 14px"}},"Mark all read"),
+            h("button",{"data-tooltip":"Remove all dismissed alerts",onClick:clearRead,className:"btn btn-danger",style:{fontSize:12,padding:"6px 14px"}},"Clear read")
           )
         ),
-        h("div",{style:{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}},
-          [{id:"all",label:"All",color:T.textSec},{id:"unread",label:"Unread",color:T.accent},{id:"danger",label:"🔴 Danger",color:T.red},{id:"warning",label:"🟠 Warning",color:T.orange},{id:"info",label:"🔵 Info",color:T.blue},{id:"success",label:"🟢 Success",color:T.cyan}].map(f=>
-            h("button",{key:f.id,onClick:()=>setAlertFilter(f.id),style:{padding:"6px 12px",borderRadius:20,border:`1px solid ${alertFilter===f.id?f.color+"66":T.border}`,background:alertFilter===f.id?f.color+"18":"transparent",color:alertFilter===f.id?f.color:T.textSec,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'",transition:"all .2s"}},f.label)
+
+        /* Pill filter tabs */
+        h("div",{style:{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}},
+          [
+            {id:"all",label:"All",count:alerts.length},
+            {id:"unread",label:"Unread",count:unreadAlerts},
+            {id:"danger",label:"\uD83D\uDD34 Danger"},
+            {id:"warning",label:"\uD83D\uDFE0 Warning"},
+            {id:"info",label:"\uD83D\uDD35 Info"},
+            {id:"success",label:"\uD83D\uDFE2 Success"},
+          ].map(f=>
+            h("button",{key:f.id,onClick:()=>setAlertFilter(f.id),style:{
+              padding:"5px 14px",borderRadius:20,border:"1px solid var(--border)",
+              background:alertFilter===f.id?"var(--teal)":"var(--bg-card)",
+              color:alertFilter===f.id?"#0A0F1A":"var(--text-muted)",
+              fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",
+              transition:"all .15s ease",
+              display:"flex",alignItems:"center",gap:5,
+            }},
+              f.label,
+              f.count!=null&&h("span",{style:{
+                background:alertFilter===f.id?"rgba(0,0,0,0.15)":"var(--bg-input)",
+                color:alertFilter===f.id?"#0A0F1A":"var(--text-dim)",
+                borderRadius:10,padding:"0 5px",fontSize:10,fontWeight:700
+              }},f.count)
+            )
           )
         ),
-        (()=>{const fa=alertFilter==="all"?alerts:alertFilter==="unread"?alerts.filter(a=>!a.read):alerts.filter(a=>a.type===alertFilter);
-        return h(React.Fragment,null,
-          fa.length===0&&h(Card,null,h("div",{style:{textAlign:"center",padding:40,color:T.textMuted}},"🎉 No alerts here!")),
-          fa.map(a=>h("div",{key:a.id,"data-tooltip":a.read?"Already read":"Hover to read, click Dismiss to clear",style:{marginBottom:10}},h(Card,{style:{borderLeft:`4px solid ${alertColor[a.type]||T.blue}`,background:a.read?T.card:(alertColor[a.type]||T.blue)+"08",opacity:a.read?.55:1,display:"flex",justifyContent:"space-between",alignItems:"center"}},
-            h("div",{style:{flex:1}},h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:4}},h(Badge,{text:a.type,color:alertColor[a.type]||T.blue}),h(Badge,{text:a.module,color:T.textSec}),!a.read&&h("span",{style:{width:7,height:7,borderRadius:"50%",background:T.accent}})),h("div",{style:{fontSize:13,lineHeight:1.5,marginTop:4}},a.icon," ",a.msg),h("div",{style:{fontSize:10,color:T.textMuted,marginTop:6}},a.time)),
-            !a.read&&h("button",{"data-tooltip":"Dismiss this alert",onClick:()=>dismissAlert(a.id),style:{padding:"6px 14px",borderRadius:8,border:"none",background:T.border,color:T.textSec,fontSize:11,cursor:"pointer",fontFamily:"'DM Sans'",fontWeight:600,marginLeft:12}},"Dismiss")
-          )))
-        );})()
+
+        /* Alert list */
+        (()=>{
+          const typeColors={danger:"var(--danger)",warning:"var(--warn)",info:"var(--blue)",success:"var(--success)"};
+          const fa=alertFilter==="all"?alerts:alertFilter==="unread"?alerts.filter(a=>!a.read):alerts.filter(a=>a.type===alertFilter);
+          if(fa.length===0) return h(Card,{style:{textAlign:"center",padding:"52px 24px",position:"relative",overflow:"hidden"}},
+            h("div",{style:{position:"absolute",inset:0,background:"radial-gradient(circle at 50% 60%,var(--teal-glow),transparent 65%)",pointerEvents:"none"}}),
+            h("div",{style:{position:"relative"}},
+              h("div",{style:{fontSize:48,marginBottom:12}},"\u2705"),
+              h("div",{style:{fontSize:16,fontWeight:700,marginBottom:6,color:"var(--text)"}},"All clear!"),
+              h("div",{style:{fontSize:13,color:"var(--text-muted)"}},
+                alertFilter==="all"?"No alerts recorded yet.":"No "+alertFilter+" alerts right now.")
+            )
+          );
+          return h("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+            fa.map(a=>{
+              const col=typeColors[a.type]||"var(--blue)";
+              return h("div",{key:a.id,className:"alert-row",style:{
+                display:"flex",alignItems:"stretch",
+                borderRadius:"var(--radius-sm)",overflow:"hidden",
+                background:a.read?"var(--bg-card)":col+"08",
+                border:`1px solid ${a.read?"var(--border)":col+"28"}`,
+                opacity:a.read?.6:1,
+                transition:"all .15s ease",
+                cursor:"default",
+              },
+                onMouseEnter:e=>e.currentTarget.style.background=a.read?"var(--bg-card-hover)":col+"14",
+                onMouseLeave:e=>e.currentTarget.style.background=a.read?"var(--bg-card)":col+"08",
+              },
+                /* Left vertical color bar */
+                h("div",{style:{
+                  width:3,flexShrink:0,
+                  background:col,
+                  boxShadow:a.read?"none":`0 0 8px ${col}80`,
+                }}),
+                /* Content */
+                h("div",{style:{padding:"12px 14px",flex:1,minWidth:0}},
+                  h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
+                    h("div",{style:{display:"flex",alignItems:"center",gap:6}},
+                      h("span",{className:`badge badge-${a.type==="danger"?"danger":a.type==="warning"?"warn":a.type==="success"?"success":"blue"}`},a.type),
+                      h("span",{className:"badge",style:{background:"var(--bg-input)",color:"var(--text-dim)",border:"1px solid var(--border)"}},a.module),
+                      !a.read&&h("span",{style:{width:6,height:6,borderRadius:"50%",background:"var(--teal)",flexShrink:0,display:"inline-block"}})  
+                    ),
+                    h("span",{style:{fontSize:10,color:"var(--text-dim)",whiteSpace:"nowrap",marginLeft:8}},a.time)
+                  ),
+                  h("div",{style:{fontSize:14,lineHeight:1.55,color:"var(--text)"}},a.icon," ",a.msg)
+                ),
+                /* Dismiss button — always visible for unread */
+                !a.read&&h("button",{"data-tooltip":"Dismiss this alert",onClick:()=>dismissAlert(a.id),
+                  style:{
+                    alignSelf:"center",marginRight:12,padding:"5px 12px",
+                    borderRadius:"var(--radius-sm)",border:"1px solid var(--border)",
+                    background:"var(--bg-input)",color:"var(--text-muted)",
+                    fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'",
+                    whiteSpace:"nowrap",flexShrink:0,
+                    transition:"var(--transition)",
+                  },
+                  onMouseEnter:e=>{e.currentTarget.style.borderColor=col;e.currentTarget.style.color=col;},
+                  onMouseLeave:e=>{e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.color="var(--text-muted)";}
+                },"Dismiss")
+              );
+            })
+          );
+        })()
       ),
 
       /* ═══ AUTOMATIONS ═══ */

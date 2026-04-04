@@ -285,6 +285,7 @@
     @keyframes slideIn  { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
     @keyframes zoomIn   { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     @keyframes shimmer  { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    @keyframes spin     { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
     /* ── ANIMATION UTILITY CLASSES ── */
     .fadeUp  { animation: fadeUp  0.45s ease both; }
@@ -308,7 +309,7 @@
 <body>
   <div id="root"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script type="text/javascript" src="/static/js/app.js?v=31"></script>
+  <script type="text/javascript" src="/static/js/app.js?v=32"></script>
   <script>
     // Unregister stale service workers and clear caches to prevent black screen
     if ('serviceWorker' in navigator) {
