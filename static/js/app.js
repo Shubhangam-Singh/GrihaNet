@@ -496,7 +496,7 @@ function AuthScreen({onLogin}){
   const isLogin=mode==="login";
   const h=React.createElement;
 
-  return h("div",{style:{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans'"}},
+  return h("div",{style:{minHeight:"100vh",background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans'"}},
     h("div",{style:{position:"absolute",inset:0,background:`radial-gradient(circle at 30% 40%,${T.accent}08 0%,transparent 50%),radial-gradient(circle at 70% 70%,${T.blue}06 0%,transparent 50%)`}}),
     h("div",{className:"fadeUp",style:{width:400,position:"relative",zIndex:1}},
       h("div",{style:{textAlign:"center",marginBottom:28}},
@@ -1104,6 +1104,9 @@ function GrihaNet(){
   useEffect(()=>{
     const theme=settings.darkMode?DARK:LIGHT;
     Object.assign(T,theme);
+    /* Drive CSS variables via data-theme attribute */
+    document.documentElement.setAttribute("data-theme", settings.darkMode?"dark":"light");
+    /* Keep body bg/color in sync for components still using T.xxx inline styles */
     document.body.style.background=theme.bg;
     document.body.style.color=theme.text;
     setThemeVersion(v=>v+1);

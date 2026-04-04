@@ -24,7 +24,7 @@
     /* ── RESET ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── DESIGN TOKENS ── */
+    /* ── DESIGN TOKENS — DARK (default) ── */
     :root {
       --bg:           #0A0F1A;
       --bg-card:      #111827;
@@ -56,18 +56,48 @@
       --transition:   all 0.2s cubic-bezier(0.4,0,0.2,1);
     }
 
+    /* ── DESIGN TOKENS — LIGHT ── */
+    [data-theme="light"] {
+      --bg:           #F0F4F9;
+      --bg-card:      #FFFFFF;
+      --bg-card-hover:#EEF2FB;
+      --bg-input:     #E8EDF8;
+      --border:       #D1D9E8;
+      --border-hover: #9DAEC8;
+
+      --teal:         #00A370;
+      --teal-dim:     #007A55;
+      --teal-glow:    rgba(0,163,112,0.12);
+      --blue:         #2070E0;
+      --blue-dim:     #1555B8;
+      --danger:       #D93040;
+      --warn:         #CC7A00;
+      --success:      #1A9E48;
+      --purple:       #7C3ACD;
+
+      --text:         #1A2235;
+      --text-muted:   #445068;
+      --text-dim:     #7A8BAA;
+
+      --shadow:       0 4px 24px rgba(0,0,0,0.12);
+      --shadow-teal:  0 0 20px rgba(0,163,112,0.15);
+    }
+
     /* ── GLOBAL ── */
     html {
       color-scheme: dark;
-      scrollbar-color: #1E293B transparent;
+      scrollbar-color: var(--border) transparent;
       scrollbar-width: thin;
+    }
+    [data-theme="light"] {
+      color-scheme: light;
     }
     body {
       font-family: 'DM Sans', sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      scrollbar-color: #1E293B transparent;
+      scrollbar-color: var(--border) transparent;
       scrollbar-width: thin;
     }
     ::selection {
@@ -78,8 +108,8 @@
     /* ── SCROLLBAR (WebKit) ── */
     ::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
     ::-webkit-scrollbar-track { background: transparent !important; }
-    ::-webkit-scrollbar-thumb { background: #1E293B !important; border-radius: 99px; }
-    ::-webkit-scrollbar-thumb:hover { background: #334155 !important; }
+    ::-webkit-scrollbar-thumb { background: var(--border) !important; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-hover) !important; }
 
     /* ── CARD SYSTEM ── */
     .card {
@@ -136,7 +166,7 @@
     }
     .btn-primary {
       background: var(--teal);
-      color: #0A0F1A;
+      color: var(--bg);
     }
     .btn-primary:hover {
       background: var(--teal-dim);
@@ -278,7 +308,7 @@
 <body>
   <div id="root"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script type="text/javascript" src="/static/js/app.js?v=30"></script>
+  <script type="text/javascript" src="/static/js/app.js?v=31"></script>
   <script>
     // Unregister stale service workers and clear caches to prevent black screen
     if ('serviceWorker' in navigator) {
