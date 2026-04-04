@@ -1708,8 +1708,95 @@ function GrihaNet(){
               h("button",{onClick:addAppliance,disabled:!newAppl.name.trim(),style:{flex:1,padding:"10px",borderRadius:10,border:"none",background:newAppl.name.trim()?T.gradient1:T.border,color:newAppl.name.trim()?"#000":T.textMuted,cursor:newAppl.name.trim()?"pointer":"default",fontWeight:700,fontFamily:"'DM Sans'"}},"Add Appliance")
             )
           )
+        ),
+
+        /* ── Appliance Card Grid ── */
+        h(Card,{className:"fadeUp d5"},
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
+            h("div",null,
+              h("div",{style:{fontSize:14,fontWeight:700,color:"var(--text)"}},"🔌 Appliance Control"),
+              h("div",{style:{fontSize:11,color:"var(--text-dim)",marginTop:2}},appliances.filter(a=>a.on).length+"/"+appliances.length+" active · "+liveWatts+"W total")
+            ),
+            h("button",{"data-tooltip":"Add a new appliance",onClick:()=>setShowAddAppliance(true),
+              className:"btn btn-ghost",style:{fontSize:12,padding:"6px 14px"}},"+ Add")
+          ),
+          h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:12}},
+            appliances.map(a=>h("div",{key:a.id,
+              "data-tooltip":a.on?"ON — click toggle to turn off":"OFF — click toggle to turn on",
+              style:{
+                background:"var(--bg-card)",
+                border:`1px solid ${a.on?"var(--teal)":"var(--border)"}`,
+                borderRadius:"var(--radius)",
+                padding:"1rem",
+                transition:"border-color .2s ease, box-shadow .2s ease, opacity .2s ease",
+                boxShadow:a.on?"0 0 18px rgba(0,229,160,0.12)":"none",
+                opacity:togglingIds.has(a.id)?.55:1,
+                display:"flex",flexDirection:"column",gap:10,
+              }},
+              /* Top row: icon + name + room badge + delete */
+              h("div",{style:{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}},
+                h("div",{style:{display:"flex",alignItems:"center",gap:10}},
+                  h("div",{style:{
+                    width:42,height:42,borderRadius:11,flexShrink:0,
+                    background:a.on?"rgba(0,229,160,0.12)":"var(--bg-input)",
+                    display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,
+                    transition:"background .2s"
+                  }},a.icon),
+                  h("div",null,
+                    h("div",{style:{fontSize:15,fontWeight:700,color:"var(--text)",lineHeight:1.2}},a.name),
+                    h("span",{className:"badge badge-blue",style:{marginTop:4,display:"inline-flex"}},a.room)
+                  )
+                ),
+                h("button",{onClick:()=>deleteAppliance(a.id),title:"Remove",style:{
+                  background:"none",border:"none",color:"var(--text-dim)",fontSize:18,
+                  cursor:"pointer",padding:"2px 4px",lineHeight:1,opacity:.4,transition:"opacity .15s"},
+                  onMouseEnter:e=>e.currentTarget.style.opacity="1",
+                  onMouseLeave:e=>e.currentTarget.style.opacity=".4"
+                },"×")
+              ),
+              /* Middle: watts in mono font */
+              h("div",{style:{paddingLeft:2}},
+                h("span",{style:{
+                  fontSize:26,fontWeight:700,fontFamily:"'IBM Plex Mono',monospace",lineHeight:1,
+                  color:a.on?"var(--teal)":"var(--text-dim)",transition:"color .2s"
+                }},a.watts),
+                h("span",{style:{fontSize:12,color:"var(--text-muted)",marginLeft:4,fontWeight:500}},"W")
+              ),
+              /* Bottom: cost/hr on left, toggle on right */
+              h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+                h("span",{style:{fontSize:12,color:"var(--text-muted)"}},
+                  a.on ? "₹"+((a.watts/1000)*settings.rate).toFixed(2)+"/hr" : "Standby"
+                ),
+                h(Toggle,{on:a.on,onToggle:()=>toggleAppliance(a.id),disabled:togglingIds.has(a.id)})
+              )
+            ))
           )
         ),
+
+        /* ── Energy Recommendations ── */
+        h("div",{style:{marginTop:16,marginBottom:8}},
+          h("div",{className:"section-title",style:{marginBottom:12}},"💡 Energy Saving Recommendations"),
+          h("div",{style:{display:"flex",flexDirection:"column",gap:8}},
+            [
+              {icon:"🌡️",text:"Geyser has been ON for over 2 hours. Turn it off to save an est. ₹"+(((2000/1000)*settings.rate)*2).toFixed(0)+"."},
+              {icon:"❄️",text:"AC is your biggest load ("+Math.round((1480/Math.max(liveWatts,1))*100)+"% of total). Setting thermostat to 24°C cuts usage by ~18%."},
+              {icon:"💡",text:"Tube Lights (×6) are ON. Switching to LED replacements cuts lighting cost by up to 60%."},
+              {icon:"📅",text:"Monthly estimate: ₹"+(parseInt(todayCost)*30).toLocaleString()+". Budget: ₹"+settings.monthlyBudget.toLocaleString()+"."+(parseInt(todayCost)*30>settings.monthlyBudget?" ⚠️ Over budget!":" ✓ On track.")},
+            ].map((rec,i)=>h("div",{key:i,className:"fade-in",style:{
+              display:"flex",alignItems:"flex-start",gap:12,
+              padding:"12px 14px",
+              background:"var(--bg-card)",
+              border:"1px solid var(--border)",
+              borderLeft:"3px solid var(--teal)",
+              borderRadius:"var(--radius-sm)",
+              animationDelay:(i*0.07)+"s",
+            }},
+              h("span",{style:{fontSize:20,flexShrink:0,marginTop:1}},rec.icon),
+              h("span",{style:{fontSize:13,color:"var(--text-muted)",lineHeight:1.6}},rec.text)
+            ))
+          )
+        )
+      ),
 
       /* ═══ NETWORK ═══ */
 
