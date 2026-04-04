@@ -168,10 +168,10 @@ function Stat({label,value,unit,icon,color=T.accent,trend,sub}){
         h("div",{className:"section-title",style:{marginBottom:10}},label),
         h("div",{style:{display:"flex",alignItems:"baseline",gap:5}},
           h("span",{style:{fontSize:30,fontWeight:700,color,fontFamily:"'IBM Plex Mono',monospace",lineHeight:1}},value),
-          unit&&h("span",{style:{fontSize:13,color:T.textMuted,fontWeight:500}},unit)
+          unit&&h("span",{style:{fontSize:13,color:"var(--text-muted)",fontWeight:500}},unit)
         ),
         trend&&h("div",{style:{fontSize:11,marginTop:8,color:trend.good?T.accent:T.red,fontWeight:600}},trend.text),
-        sub&&h("div",{style:{fontSize:11,marginTop:4,color:T.textMuted}},sub)
+        sub&&h("div",{style:{fontSize:11,marginTop:4,color:"var(--text-muted)"}},sub)
       ),
       h("div",{style:{fontSize:26,width:46,height:46,borderRadius:12,background:color+"14",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},icon)
     )
@@ -567,8 +567,8 @@ function AuthScreen({onLogin}){
     type,placeholder:ph,value:val,
     onChange:e=>{set(e.target.value);setError("");},
     style:{width:"100%",padding:"12px 16px",borderRadius:10,
-      border:`1px solid ${T.border}`,background:T.surface,
-      color:T.text,fontSize:14,fontFamily:"'DM Sans'",outline:"none",
+      border:"1px solid var(--border)",background:"var(--bg-card)",
+      color:"var(--text)",fontSize:14,fontFamily:"'DM Sans'",outline:"none",
       marginBottom:12},
   });
 
@@ -604,11 +604,11 @@ function AuthScreen({onLogin}){
     h("div",{className:"fadeUp",style:{width:400,position:"relative",zIndex:1}},
       h("div",{style:{textAlign:"center",marginBottom:28}},
         h("div",{style:{display:"inline-flex",alignItems:"center",justifyContent:"center",width:60,height:60,borderRadius:18,background:T.gradient1,fontSize:28,marginBottom:14,boxShadow:`0 8px 32px ${T.accent}33`}},"🏠"),
-        h("h1",{style:{fontSize:26,fontWeight:700,color:T.text,margin:0}},"Griha",h("span",{style:{color:T.accent}},"Net")),
-        h("p",{style:{color:T.textSec,fontSize:13,marginTop:5}},"Unified Smart Home Monitoring System")
+        h("h1",{style:{fontSize:26,fontWeight:700,color:"var(--text)",margin:0}},"Griha",h("span",{style:{color:"var(--teal)"}},"Net")),
+        h("p",{style:{color:"var(--text-muted)",fontSize:13,marginTop:5}},"Unified Smart Home Monitoring System")
       ),
       // Tab switcher
-      h("div",{style:{display:"flex",background:T.surface,borderRadius:12,padding:4,marginBottom:20,border:`1px solid ${T.border}`}},
+      h("div",{style:{display:"flex",background:"var(--bg-card)",borderRadius:12,padding:4,marginBottom:20,border:"1px solid var(--border)"}},
         ["login","register"].map(m=>
           h("button",{key:m,onClick:()=>{setMode(m);setError("");},
             style:{flex:1,padding:"10px 0",borderRadius:9,border:"none",
@@ -622,37 +622,37 @@ function AuthScreen({onLogin}){
       h(Card,{style:{padding:24}},
         // ── LOGIN FORM ──
         isLogin&&h(React.Fragment,null,
-          h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Email"),
+          h("label",{style:{fontSize:12,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"Email"),
           inp(email,setEmail,"email"),
-          h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Password"),
+          h("label",{style:{fontSize:12,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"Password"),
           inp(pass,setPass,"password"),
-          error&&h("div",{style:{fontSize:12,color:T.red,marginBottom:10,padding:"6px 10px",borderRadius:6,background:T.redDim}},error),
+          error&&h("div",{style:{fontSize:12,color:"var(--danger)",marginBottom:10,padding:"6px 10px",borderRadius:6,background:"rgba(239,68,68,0.12)"}},error),
           h("button",{onClick:handleLogin,disabled:loading,
             style:{width:"100%",padding:"13px 0",borderRadius:10,border:"none",
               background:loading?T.border:T.gradient1,color:loading?T.textMuted:"#000",
               fontSize:14,fontWeight:700,cursor:loading?"default":"pointer",
               fontFamily:"'DM Sans'",boxShadow:loading?"none":`0 4px 20px ${T.accent}33`,marginTop:4}},
             loading?"Signing in...":"Sign In"),
-          h("p",{style:{textAlign:"center",fontSize:11,color:T.textMuted,marginTop:12}},"Demo: admin@grihanet.com / password123")
+          h("p",{style:{textAlign:"center",fontSize:11,color:"var(--text-muted)",marginTop:12}},"Demo: admin@grihanet.com / password123")
         ),
         // ── REGISTER FORM ──
         !isLogin&&h(React.Fragment,null,
-          h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Full Name"),
+          h("label",{style:{fontSize:12,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"Full Name"),
           inp(rName,setRName,"text","e.g. Priya Sharma"),
-          h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Email"),
+          h("label",{style:{fontSize:12,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"Email"),
           inp(rEmail,setREmail,"email","you@example.com"),
-          h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Password"),
+          h("label",{style:{fontSize:12,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"Password"),
           inp(rPass,setRPass,"password","Min. 6 characters"),
-          h("label",{style:{fontSize:12,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"Confirm Password"),
+          h("label",{style:{fontSize:12,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"Confirm Password"),
           inp(rConf,setRConf,"password","Repeat your password"),
-          error&&h("div",{style:{fontSize:12,color:T.red,marginBottom:10,padding:"6px 10px",borderRadius:6,background:T.redDim}},error),
+          error&&h("div",{style:{fontSize:12,color:"var(--danger)",marginBottom:10,padding:"6px 10px",borderRadius:6,background:"rgba(239,68,68,0.12)"}},error),
           h("button",{onClick:handleRegister,disabled:loading,
             style:{width:"100%",padding:"13px 0",borderRadius:10,border:"none",
               background:loading?T.border:T.gradient1,color:loading?T.textMuted:"#000",
               fontSize:14,fontWeight:700,cursor:loading?"default":"pointer",
               fontFamily:"'DM Sans'",boxShadow:loading?"none":`0 4px 20px ${T.accent}33`,marginTop:4}},
             loading?"Creating account...":"Create Account"),
-          h("p",{style:{textAlign:"center",fontSize:11,color:T.textMuted,marginTop:12}},"Your data is isolated — each account gets its own home 🏠")
+          h("p",{style:{textAlign:"center",fontSize:11,color:"var(--text-muted)",marginTop:12}},"Your data is isolated — each account gets its own home 🏠")
         )
       )
     )
@@ -671,14 +671,14 @@ function AutomationModal({appliances,onClose,onCreate}){
   const h=React.createElement;
 
   const sel=(val,onChange,opts)=>h("select",{value:val,onChange:e=>onChange(e.target.value),
-    style:{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${T.border}`,
-      background:T.surface,color:T.text,fontSize:13,fontFamily:"'DM Sans'",marginBottom:12}},
+    style:{width:"100%",padding:"10px 12px",borderRadius:8,border:"1px solid var(--border)",
+      background:"var(--bg-card)",color:"var(--text)",fontSize:13,fontFamily:"'DM Sans'",marginBottom:12}},
     opts.map(([v,l])=>h("option",{key:v,value:v},l))
   );
   const inp2=(val,onChange,ph="",type="text")=>h("input",{type,placeholder:ph,value:val,
     onChange:e=>onChange(e.target.value),
-    style:{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${T.border}`,
-      background:T.surface,color:T.text,fontSize:13,fontFamily:"'DM Sans'",marginBottom:12}});
+    style:{width:"100%",padding:"10px 12px",borderRadius:8,border:"1px solid var(--border)",
+      background:"var(--bg-card)",color:"var(--text)",fontSize:13,fontFamily:"'DM Sans'",marginBottom:12}});
 
   const overlay={position:"fixed",inset:0,background:"rgba(0,0,0,.7)",display:"flex",
     alignItems:"center",justifyContent:"center",zIndex:500,backdropFilter:"blur(6px)"};
@@ -700,58 +700,58 @@ function AutomationModal({appliances,onClose,onCreate}){
   const stepLabel=["1. Trigger","2. Action","3. Name"];
   return h("div",{style:overlay,onClick:onClose},
     h("div",{onClick:e=>e.stopPropagation(),
-      style:{width:480,borderRadius:16,background:T.card,border:`1px solid ${T.border}`,
+      style:{width:480,borderRadius:16,background:"var(--bg-card)",border:"1px solid var(--border)",
         padding:28,boxShadow:"0 24px 60px rgba(0,0,0,.5)"}},
       h("div",{style:{display:"flex",gap:8,marginBottom:20}},
         stepLabel.map((l,i)=>h("div",{key:i,style:{flex:1,textAlign:"center",padding:"6px 0",
           borderRadius:8,fontSize:11,fontWeight:700,
           background:step===i+1?T.gradient1:step>i+1?T.accentDim:T.surface,
-          color:step===i+1?"#000":step>i+1?T.accent:T.textMuted,border:`1px solid ${T.border}`}},l))
+          color:step===i+1?"#000":step>i+1?T.accent:T.textMuted,border:"1px solid var(--border)"}},l))
       ),
-      h("h3",{style:{fontSize:15,fontWeight:700,marginBottom:16,color:T.text}},
+      h("h3",{style:{fontSize:15,fontWeight:700,marginBottom:16,color:"var(--text)"}},
         step===1?"Choose what triggers this rule":step===2?"Choose what happens":"Name your rule"
       ),
       step===1&&h(React.Fragment,null,
-        h("label",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"TRIGGER TYPE"),
+        h("label",{style:{fontSize:11,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"TRIGGER TYPE"),
         sel(trigType,setTrigType,[["power_exceeds","⚡ Power exceeds X kW"],["camera_detects","📹 Camera detects event"],["time_is","🕐 Time is (daily schedule)"],["appliance_on","🔌 Appliance on for X hours"]]),
-        trigType==="power_exceeds"&&h(React.Fragment,null,h("label",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"THRESHOLD (kW)"),inp2(trigParams.kw,v=>setTrigParams(p=>({...p,kw:v})),"e.g. 5.0","number")),
-        trigType==="camera_detects"&&h(React.Fragment,null,h("label",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"EVENT TYPE"),sel(trigParams.event,v=>setTrigParams(p=>({...p,event:v})),[["Person","👤 Person"],["Delivery","📦 Delivery"],["Vehicle","🚗 Vehicle"],["Animal","🐈 Animal"],["Motion","🔵 Motion"]])),
-        trigType==="time_is"&&h(React.Fragment,null,h("label",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"TIME (24hr)"),inp2(trigParams.time,v=>setTrigParams(p=>({...p,time:v})),"23:00")),
+        trigType==="power_exceeds"&&h(React.Fragment,null,h("label",{style:{fontSize:11,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"THRESHOLD (kW)"),inp2(trigParams.kw,v=>setTrigParams(p=>({...p,kw:v})),"e.g. 5.0","number")),
+        trigType==="camera_detects"&&h(React.Fragment,null,h("label",{style:{fontSize:11,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"EVENT TYPE"),sel(trigParams.event,v=>setTrigParams(p=>({...p,event:v})),[["Person","👤 Person"],["Delivery","📦 Delivery"],["Vehicle","🚗 Vehicle"],["Animal","🐈 Animal"],["Motion","🔵 Motion"]])),
+        trigType==="time_is"&&h(React.Fragment,null,h("label",{style:{fontSize:11,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"TIME (24hr)"),inp2(trigParams.time,v=>setTrigParams(p=>({...p,time:v})),"23:00")),
         trigType==="appliance_on"&&h(React.Fragment,null,
-          h("label",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"APPLIANCE"),
+          h("label",{style:{fontSize:11,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"APPLIANCE"),
           sel(trigParams.appliance_id,v=>setTrigParams(p=>({...p,appliance_id:v})),appliances.map(a=>[String(a.id),a.icon+" "+a.name])),
-          h("label",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"HOURS RUNNING"),
+          h("label",{style:{fontSize:11,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"HOURS RUNNING"),
           inp2(trigParams.hours,v=>setTrigParams(p=>({...p,hours:v})),"2","number")
         )
       ),
       step===2&&h(React.Fragment,null,
-        h("label",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"ACTION TYPE"),
+        h("label",{style:{fontSize:11,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"ACTION TYPE"),
         sel(actType,setActType,[["create_alert","🔔 Create an alert"],["turn_on","✅ Turn ON an appliance"],["turn_off","❌ Turn OFF an appliance"]]),
         (actType==="turn_on"||actType==="turn_off")&&h(React.Fragment,null,
-          h("label",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"APPLIANCE"),
+          h("label",{style:{fontSize:11,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"APPLIANCE"),
           sel(actParams.appliance_id,v=>setActParams(p=>({...p,appliance_id:v})),appliances.map(a=>[String(a.id),a.icon+" "+a.name]))
         ),
         actType==="create_alert"&&h(React.Fragment,null,
-          h("label",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"ALERT MESSAGE"),
+          h("label",{style:{fontSize:11,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"ALERT MESSAGE"),
           inp2(actParams.message,v=>setActParams(p=>({...p,message:v})),"Alert message..."),
-          h("label",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"SEVERITY"),
+          h("label",{style:{fontSize:11,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"SEVERITY"),
           sel(actParams.type,v=>setActParams(p=>({...p,type:v})),[["danger","🔴 Danger"],["warning","🟠 Warning"],["info","🔵 Info"],["success","🟢 Success"]])
         )
       ),
       step===3&&h(React.Fragment,null,
-        h("label",{style:{fontSize:11,color:T.textSec,fontWeight:600,display:"block",marginBottom:6}},"RULE NAME"),
+        h("label",{style:{fontSize:11,color:"var(--text-muted)",fontWeight:600,display:"block",marginBottom:6}},"RULE NAME"),
         inp2(ruleName,setRuleName,"e.g. Night Power Saver"),
-        h("div",{style:{padding:"12px 14px",borderRadius:10,background:T.surface,border:`1px solid ${T.border}`,fontSize:12,color:T.textSec}},
+        h("div",{style:{padding:"12px 14px",borderRadius:10,background:"var(--bg-card)",border:"1px solid var(--border)",fontSize:12,color:"var(--text-muted)"}},
           h("div",{style:{marginBottom:6}},h("strong",{style:{color:T.blue}},"IF "),
             ({power_exceeds:`Power > ${trigParams.kw} kW`,camera_detects:`Camera detects ${trigParams.event}`,time_is:`Time is ${trigParams.time}`,appliance_on:`${appliances.find(a=>String(a.id)===String(trigParams.appliance_id))?.name||"Appliance"} on for ${trigParams.hours}h`}[trigType]||trigType)
           ),
-          h("div",null,h("strong",{style:{color:T.accent}},"THEN "),actType==="create_alert"?`Alert: "${actParams.message}"`:((actType==="turn_on"?"Turn ON ":"Turn OFF ")+(appliances.find(a=>String(a.id)===String(actParams.appliance_id))?.name||"appliance #"+actParams.appliance_id)))
+          h("div",null,h("strong",{style:{color:"var(--teal)"}},"THEN "),actType==="create_alert"?`Alert: "${actParams.message}"`:((actType==="turn_on"?"Turn ON ":"Turn OFF ")+(appliances.find(a=>String(a.id)===String(actParams.appliance_id))?.name||"appliance #"+actParams.appliance_id)))
         )
       ),
       h("div",{style:{display:"flex",justifyContent:"space-between",marginTop:20}},
         h("button",{onClick:step===1?onClose:()=>setStep(s=>s-1),
-          style:{padding:"10px 20px",borderRadius:10,border:`1px solid ${T.border}`,
-            background:"transparent",color:T.textSec,fontSize:13,fontWeight:600,
+          style:{padding:"10px 20px",borderRadius:10,border:"1px solid var(--border)",
+            background:"transparent",color:"var(--text-muted)",fontSize:13,fontWeight:600,
             cursor:"pointer",fontFamily:"'DM Sans'"}},step===1?"Cancel":"← Back"),
         step<3?h("button",{onClick:()=>setStep(s=>s+1),
           style:{padding:"10px 20px",borderRadius:10,border:"none",
@@ -834,18 +834,18 @@ function AdminPanel({user,addToast}){
 
   if(loadErr)return h("div",{style:{padding:40,textAlign:"center"}},
     h("div",{style:{fontSize:32,marginBottom:12}},"⚠️"),
-    h("div",{style:{fontSize:15,fontWeight:600,color:T.red,marginBottom:8}},"Admin Panel Unavailable"),
-    h("div",{style:{fontSize:12,color:T.textMuted,marginBottom:20}},"Your session may have expired. Please log out and log back in."),
-    h("button",{onClick:fetchUsers,style:{padding:"10px 24px",borderRadius:10,border:"none",background:T.accentDim,color:T.accent,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}},"🔄 Retry")
+    h("div",{style:{fontSize:15,fontWeight:600,color:"var(--danger)",marginBottom:8}},"Admin Panel Unavailable"),
+    h("div",{style:{fontSize:12,color:"var(--text-muted)",marginBottom:20}},"Your session may have expired. Please log out and log back in."),
+    h("button",{onClick:fetchUsers,style:{padding:"10px 24px",borderRadius:10,border:"none",background:"var(--teal-glow)",color:"var(--teal)",fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}},"🔄 Retry")
   );
-  if(!stats)return h("div",{style:{padding:40,textAlign:"center",color:T.textMuted}},
+  if(!stats)return h("div",{style:{padding:40,textAlign:"center",color:"var(--text-muted)"}},
     h("div",{style:{fontSize:24,marginBottom:8}},"⏳"),"Loading admin panel...");
 
   return h("div",{style:{display:"flex",flexDirection:"column",gap:16}},
     /* Platform Stats */
     h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12,marginBottom:8}},
       h("div",{className:"fadeUp d1"},h(Stat,{label:"Total Users",value:stats.total_users,unit:`(${stats.active_users} active)`,icon:"👥",color:T.blue})),
-      h("div",{className:"fadeUp d2"},h(Stat,{label:"Total Appliances",value:stats.total_appliances,unit:"",icon:"🔌",color:T.accent})),
+      h("div",{className:"fadeUp d2"},h(Stat,{label:"Total Appliances",value:stats.total_appliances,unit:"",icon:"🔌",color:"var(--teal)"})),
       h("div",{className:"fadeUp d3"},h(Stat,{label:"Network Devices",value:stats.total_devices,unit:"",icon:"🌐",color:T.purple})),
       h("div",{className:"fadeUp d4"},h(Stat,{label:"Active Automations",value:stats.total_automations,unit:"",icon:"🤖",color:T.orange}))
     ),
@@ -857,7 +857,7 @@ function AdminPanel({user,addToast}){
       ),
       h("div",{style:{overflowX:"auto"}},
         h("table",{style:{width:"100%",borderCollapse:"collapse",textAlign:"left"}},
-          h("thead",null,h("tr",{style:{borderBottom:`1px solid ${T.border}44`,color:T.textMuted,fontSize:11,textTransform:"uppercase",letterSpacing:1}},
+          h("thead",null,h("tr",{style:{borderBottom:`1px solid ${T.border}44`,color:"var(--text-muted)",fontSize:11,textTransform:"uppercase",letterSpacing:1}},
             h("th",{style:{padding:"12px 0",fontWeight:600}},"User"),
             h("th",{style:{padding:"12px 0",fontWeight:600}},"Role"),
             h("th",{style:{padding:"12px 0",fontWeight:600}},"Status"),
@@ -865,7 +865,7 @@ function AdminPanel({user,addToast}){
             h("th",{style:{padding:"12px 0",fontWeight:600,textAlign:"right"}},"Actions")
           )),
           h("tbody",null,
-            users.map(u=>h("tr",{key:u.id,style:{borderBottom:`1px solid ${T.border}22`}},
+            users.map(u=>h("tr",{key:u.id,style:{borderBottom:"1px solid rgba(30,41,59,0.2)"}},
               h("td",{style:{padding:"12px 0",display:"flex",alignItems:"center",gap:12}},
                 /* Avatar — gold crown ring for super admin */
                 h("div",{style:{
@@ -879,7 +879,7 @@ function AdminPanel({user,addToast}){
                 }},u.is_superadmin?"👑":u.name.charAt(0).toUpperCase()),
                 h("div",null,
                   h("div",{style:{fontSize:13,fontWeight:600}},u.name,u.id===user.id&&" (You)"),
-                  h("div",{style:{fontSize:11,color:T.textMuted}},u.email)
+                  h("div",{style:{fontSize:11,color:"var(--text-muted)"}},u.email)
                 )
               ),
               /* Role badge */
@@ -891,7 +891,7 @@ function AdminPanel({user,addToast}){
                   :h(Badge,{text:u.role.toUpperCase(),color:u.role==="admin"?T.accent:T.blue})
               ),
               h("td",{style:{padding:"12px 0"}},h(Badge,{text:u.is_active?"ACTIVE":"SUSPENDED",color:u.is_active?T.accent:T.red})),
-              h("td",{style:{padding:"12px 0",fontSize:12,color:T.textMuted}},u.created_at),
+              h("td",{style:{padding:"12px 0",fontSize:12,color:"var(--text-muted)"}},u.created_at),
               /* Action buttons */
               h("td",{style:{padding:"12px 0",textAlign:"right"}},
                 u.is_superadmin
@@ -899,32 +899,32 @@ function AdminPanel({user,addToast}){
                   ?h("div",{style:{display:"flex",gap:8,justifyContent:"flex-end",alignItems:"center"}},
                       h("span",{title:"Super Admin — protected",style:{fontSize:18,opacity:.7}},"👑"),
                       h("button",{onClick:()=>resetPassword(u),title:"Reset Password",
-                        style:{background:"transparent",border:`1px solid ${T.border}`,color:T.text,
+                        style:{background:"transparent",border:"1px solid var(--border)",color:"var(--text)",
                           padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🔑"),
                       h("button",{disabled:true,title:"Cannot promote/demote Super Admin",
-                        style:{background:"transparent",border:`1px solid ${T.border}33`,color:T.textMuted,
+                        style:{background:"transparent",border:`1px solid ${T.border}33`,color:"var(--text-muted)",
                           padding:"6px 10px",borderRadius:6,cursor:"not-allowed",fontSize:13,opacity:.3}},"🛡️"),
                       h("button",{disabled:true,title:"Cannot suspend Super Admin",
-                        style:{background:"transparent",border:`1px solid ${T.border}33`,color:T.textMuted,
+                        style:{background:"transparent",border:`1px solid ${T.border}33`,color:"var(--text-muted)",
                           padding:"6px 10px",borderRadius:6,cursor:"not-allowed",fontSize:13,opacity:.3}},"⏸"),
                       h("button",{disabled:true,title:"Cannot delete Super Admin",
-                        style:{background:"transparent",border:`1px solid ${T.border}33`,color:T.textMuted,
+                        style:{background:"transparent",border:`1px solid ${T.border}33`,color:"var(--text-muted)",
                           padding:"6px 10px",borderRadius:6,cursor:"not-allowed",fontSize:13,opacity:.3}},"🗑️")
                     )
                   /* Normal user/admin row — all actions available */
                   :h("div",{style:{display:"flex",gap:8,justifyContent:"flex-end"}},
                       h("button",{onClick:()=>toggleRole(u),title:"Promote/Demote Role",
-                        style:{background:"transparent",border:`1px solid ${T.border}`,color:T.text,
+                        style:{background:"transparent",border:"1px solid var(--border)",color:"var(--text)",
                           padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🛡️"),
                       h("button",{onClick:()=>resetPassword(u),title:"Reset Password",
-                        style:{background:"transparent",border:`1px solid ${T.border}`,color:T.text,
+                        style:{background:"transparent",border:"1px solid var(--border)",color:"var(--text)",
                           padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🔑"),
                       h("button",{onClick:()=>deactivate(u),title:u.is_active?"Suspend user":"Activate user",
-                        style:{background:"transparent",border:`1px solid ${T.border}`,
+                        style:{background:"transparent",border:"1px solid var(--border)",
                           color:u.is_active?T.orange:T.accent,padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},
                         u.is_active?"⏸":"▶"),
                       h("button",{onClick:()=>deleteUser(u),title:"Delete entirely",
-                        style:{background:"transparent",border:`1px solid ${T.red}44`,color:T.red,
+                        style:{background:"transparent",border:`1px solid ${T.red}44`,color:"var(--danger)",
                           padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:13}},"🗑️")
                     )
               )
@@ -934,19 +934,19 @@ function AdminPanel({user,addToast}){
       )
     ),
     /* Add Member Modal */
-    showAdd&&h("div",{style:{position:"fixed",inset:0,background:"#000c",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center"}},
-      h("div",{style:{background:T.card,border:`1px solid ${T.border}`,borderRadius:24,padding:32,width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,.5)",animation:"zoomIn .3s ease"}},
+    showAdd&&h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",backdropFilter:"blur(4px)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center"}},
+      h("div",{style:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:24,padding:32,width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,.5)",animation:"zoomIn .3s ease"}},
         h("h3",{style:{margin:"0 0 20px 0",fontSize:20}},"Add New Member"),
         h("form",{onSubmit:handleCreate,style:{display:"flex",flexDirection:"column",gap:16}},
-          h("input",{placeholder:"Full Name",name:"name",required:true,style:{padding:"12px 16px",borderRadius:12,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:14,fontFamily:"inherit"}}),
-          h("input",{type:"email",placeholder:"Email Address",name:"email",required:true,style:{padding:"12px 16px",borderRadius:12,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:14,fontFamily:"inherit"}}),
-          h("input",{type:"password",placeholder:"Temporary Password",name:"password",required:true,minLength:6,style:{padding:"12px 16px",borderRadius:12,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:14,fontFamily:"inherit"}}),
+          h("input",{placeholder:"Full Name",name:"name",required:true,style:{padding:"12px 16px",borderRadius:12,border:"1px solid var(--border)",background:"var(--bg-card)",color:"var(--text)",fontSize:14,fontFamily:"inherit"}}),
+          h("input",{type:"email",placeholder:"Email Address",name:"email",required:true,style:{padding:"12px 16px",borderRadius:12,border:"1px solid var(--border)",background:"var(--bg-card)",color:"var(--text)",fontSize:14,fontFamily:"inherit"}}),
+          h("input",{type:"password",placeholder:"Temporary Password",name:"password",required:true,minLength:6,style:{padding:"12px 16px",borderRadius:12,border:"1px solid var(--border)",background:"var(--bg-card)",color:"var(--text)",fontSize:14,fontFamily:"inherit"}}),
           h("div",{style:{display:"flex",gap:20,padding:"0 4px"}},
             h("label",{style:{fontSize:13,display:"flex",alignItems:"center",gap:6,cursor:"pointer"}},h("input",{type:"radio",name:"role",value:"user",defaultChecked:true})," Standard User"),
             h("label",{style:{fontSize:13,display:"flex",alignItems:"center",gap:6,cursor:"pointer"}},h("input",{type:"radio",name:"role",value:"admin"})," Admin Role")
           ),
           h("div",{style:{display:"flex",gap:12,marginTop:10}},
-            h("button",{type:"button",onClick:()=>setShowAdd(false),style:{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.text,cursor:"pointer",fontWeight:600,fontFamily:"inherit"}},"Cancel"),
+            h("button",{type:"button",onClick:()=>setShowAdd(false),style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid var(--border)",background:"transparent",color:"var(--text)",cursor:"pointer",fontWeight:600,fontFamily:"inherit"}},"Cancel"),
             h("button",{type:"submit",style:{flex:1,padding:"10px",borderRadius:10,border:"none",background:T.accent,color:"#111",cursor:"pointer",fontWeight:600,fontFamily:"inherit"}},"Create Member")
           )
         )
@@ -1459,7 +1459,7 @@ function GrihaNet(){
   const activeCams=cameras.filter(c=>c.status==="active").length;
   const unreadAlerts=alerts.filter(a=>!a.read).length;
   const totalMotion=cameras.reduce((s,c)=>s+(c.motionEvents||0),0);
-  const roomData=[{name:"Bedroom",color:T.blue},{name:"Kitchen",color:T.orange},{name:"Living Room",color:T.purple},{name:"Bathroom",color:T.cyan},{name:"All Rooms",color:T.accent}].map(r=>({...r,value:appliances.filter(a=>a.room===r.name&&a.on).reduce((s,a)=>s+a.watts,0)})).filter(r=>r.value>0);
+  const roomData=[{name:"Bedroom",color:T.blue},{name:"Kitchen",color:T.orange},{name:"Living Room",color:T.purple},{name:"Bathroom",color:T.cyan},{name:"All Rooms",color:"var(--teal)"}].map(r=>({...r,value:appliances.filter(a=>a.room===r.name&&a.on).reduce((s,a)=>s+a.watts,0)})).filter(r=>r.value>0);
   const alertColor={danger:T.red,warning:T.orange,info:T.blue,success:T.accent};
   const devIcons={phone:"📱",laptop:"💻",tv:"📺",gaming:"🎮",unknown:"❓"};
   const sevColor={high:T.red,medium:T.orange,low:T.textSec};
@@ -1565,15 +1565,15 @@ function GrihaNet(){
     ),
     /* VOICE FEEDBACK OVERLAY */
     (listening||feedback)&&h("div",{style:{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",
-      background:T.card,border:`1px solid ${listening?T.accent:feedback?.ok?T.accent:T.orange}`,
+      background:"var(--bg-card)",border:`1px solid ${listening?T.accent:feedback?.ok?T.accent:T.orange}`,
       borderRadius:16,padding:"14px 24px",zIndex:300,boxShadow:"0 8px 32px rgba(0,0,0,.4)",
       display:"flex",alignItems:"center",gap:12,minWidth:260,maxWidth:420,
       animation:"slideDown .3s ease"}},
       h("div",{style:{fontSize:24,animation:listening?"pulse 1s infinite":"none"}},listening?"🎤":feedback?.ok?"✅":"❌"),
       h("div",null,
-        h("div",{style:{fontSize:13,fontWeight:700,color:T.text}},
+        h("div",{style:{fontSize:13,fontWeight:700,color:"var(--text)"}},
           listening?(transcript||"Listening… speak now"):feedback?.msg),
-        listening&&h("div",{style:{fontSize:11,color:T.textMuted,marginTop:2}},
+        listening&&h("div",{style:{fontSize:11,color:"var(--text-muted)",marginTop:2}},
           'Try: "turn on geyser" • "show power" • "turn off lights"')
       )
     ),
@@ -1728,15 +1728,15 @@ function GrihaNet(){
         h("div",{style:{display:"grid",gridTemplateColumns:"2fr 1fr",gap:14,marginBottom:14}},
           h(Card,{className:"fadeUp d3"},
             h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},h("div",{style:{fontSize:14,fontWeight:600}},"⚡ Power Consumption — 24 Hours"),h(Badge,{text:settings.autoRefresh?"LIVE":"PAUSED",color:settings.autoRefresh?T.accent:T.textMuted})),
-            h(ResponsiveContainer,{width:"100%",height:200},h(AreaChart,{data:powerData},h("defs",null,h("linearGradient",{id:"pg",x1:0,y1:0,x2:0,y2:1},h("stop",{offset:"0%",stopColor:T.accent,stopOpacity:.25}),h("stop",{offset:"100%",stopColor:T.accent,stopOpacity:0}))),h(CartesianGrid,{strokeDasharray:"3 3",stroke:T.border}),h(XAxis,{dataKey:"hour",tick:{fontSize:9,fill:T.textMuted},interval:3,axisLine:false}),h(YAxis,{tick:{fontSize:9,fill:T.textMuted},axisLine:false,unit:" kW"}),h(Tooltip,{contentStyle:{background:"#182236",border:`1px solid ${T.border}`,borderRadius:8,fontSize:12,color:T.text},labelStyle:{color:T.text,fontWeight:600},itemStyle:{color:T.textSec}}),h(Area,{type:"monotone",dataKey:"kw",stroke:T.accent,strokeWidth:2,fill:"url(#pg)",name:"Power (kW)"})))
+            h(ResponsiveContainer,{width:"100%",height:200},h(AreaChart,{data:powerData},h("defs",null,h("linearGradient",{id:"pg",x1:0,y1:0,x2:0,y2:1},h("stop",{offset:"0%",stopColor:T.accent,stopOpacity:.25}),h("stop",{offset:"100%",stopColor:T.accent,stopOpacity:0}))),h(CartesianGrid,{strokeDasharray:"3 3",stroke:"var(--border)"}),h(XAxis,{dataKey:"hour",tick:{fontSize:9,fill:"var(--text-muted)"},interval:3,axisLine:false}),h(YAxis,{tick:{fontSize:9,fill:"var(--text-muted)"},axisLine:false,unit:" kW"}),h(Tooltip,{contentStyle:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:8,fontSize:12,color:"var(--text)"},labelStyle:{color:"var(--text)",fontWeight:600},itemStyle:{color:"var(--text-muted)"}}),h(Area,{type:"monotone",dataKey:"kw",stroke:T.accent,strokeWidth:2,fill:"url(#pg)",name:"Power (kW)"})))
           ),
           h(Card,{className:"fadeUp d4"},h("div",{style:{fontSize:14,fontWeight:600,marginBottom:14}},"🔔 Recent Alerts"),
-            h("div",{style:{display:"flex",flexDirection:"column",gap:8}},alerts.slice(0,4).map(a=>h("div",{key:a.id,style:{padding:"10px 12px",borderRadius:10,background:(alertColor[a.type]||T.blue)+"0a",borderLeft:`3px solid ${alertColor[a.type]||T.blue}`,opacity:a.read?.55:1}},h("div",{style:{fontSize:12,lineHeight:1.4}},a.icon," ",a.msg),h("div",{style:{fontSize:10,color:T.textMuted,marginTop:4}},a.time," • ",a.module))))
+            h("div",{style:{display:"flex",flexDirection:"column",gap:8}},alerts.slice(0,4).map(a=>h("div",{key:a.id,style:{padding:"10px 12px",borderRadius:10,background:(alertColor[a.type]||T.blue)+"0a",borderLeft:`3px solid ${alertColor[a.type]||T.blue}`,opacity:a.read?.55:1}},h("div",{style:{fontSize:12,lineHeight:1.4}},a.icon," ",a.msg),h("div",{style:{fontSize:10,color:"var(--text-muted)",marginTop:4}},a.time," • ",a.module))))
           )
         ),
         h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}},
-          h(Card,{className:"fadeUp d5"},h("div",{style:{fontSize:14,fontWeight:600,marginBottom:14}},"👥 Connected Devices"),devices.filter(d=>d.online).map(d=>h("div",{key:d.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${T.border}22`}},h("div",{style:{display:"flex",alignItems:"center",gap:10}},h("span",{style:{fontSize:18}},devIcons[d.type]),h("div",null,h("div",{style:{fontSize:12,fontWeight:500}},d.name," ",!d.wl&&h(Badge,{text:"⚠ unknown",color:T.orange})),h("div",{style:{fontSize:10,color:T.textMuted,fontFamily:"'IBM Plex Mono'"}},d.ip))),h("div",{style:{fontSize:12,fontWeight:600,color:T.blue}},d.bw+" GB")))),
-          h(Card,{className:"fadeUp d6"},h("div",{style:{fontSize:14,fontWeight:600,marginBottom:14}},"📹 Camera Overview"),cameras.map(c=>h("div",{key:c.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${T.border}22`}},h("div",{style:{display:"flex",alignItems:"center",gap:10}},h("div",{style:{width:8,height:8,borderRadius:"50%",background:c.status==="active"?T.accent:T.red,animation:c.status==="active"?"pulse 2s infinite":"none"}}),h("div",null,h("div",{style:{fontSize:12,fontWeight:500}},c.name),h("div",{style:{fontSize:10,color:T.textMuted}},(c.motionEvents||0)+" events"))),h(Badge,{text:c.status,color:c.status==="active"?T.accent:T.red}))))
+          h(Card,{className:"fadeUp d5"},h("div",{style:{fontSize:14,fontWeight:600,marginBottom:14}},"👥 Connected Devices"),devices.filter(d=>d.online).map(d=>h("div",{key:d.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},h("div",{style:{display:"flex",alignItems:"center",gap:10}},h("span",{style:{fontSize:18}},devIcons[d.type]),h("div",null,h("div",{style:{fontSize:12,fontWeight:500}},d.name," ",!d.wl&&h(Badge,{text:"⚠ unknown",color:T.orange})),h("div",{style:{fontSize:10,color:"var(--text-muted)",fontFamily:"'IBM Plex Mono'"}},d.ip))),h("div",{style:{fontSize:12,fontWeight:600,color:T.blue}},d.bw+" GB")))),
+          h(Card,{className:"fadeUp d6"},h("div",{style:{fontSize:14,fontWeight:600,marginBottom:14}},"📹 Camera Overview"),cameras.map(c=>h("div",{key:c.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},h("div",{style:{display:"flex",alignItems:"center",gap:10}},h("div",{style:{width:8,height:8,borderRadius:"50%",background:c.status==="active"?T.accent:T.red,animation:c.status==="active"?"pulse 2s infinite":"none"}}),h("div",null,h("div",{style:{fontSize:12,fontWeight:500}},c.name),h("div",{style:{fontSize:10,color:"var(--text-muted)"}},(c.motionEvents||0)+" events"))),h(Badge,{text:c.status,color:c.status==="active"?T.accent:T.red}))))
         )
       ),
 
@@ -1807,9 +1807,9 @@ function GrihaNet(){
                 h(XAxis,{dataKey:"day",tick:{fontSize:10,fill:"var(--text-dim)"},axisLine:false,tickLine:false}),
                 h(YAxis,{yAxisId:"kwh",tick:{fontSize:9,fill:"var(--text-dim)"},axisLine:false,tickLine:false}),
                 h(YAxis,{yAxisId:"cost",orientation:"right",tick:{fontSize:9,fill:"var(--text-dim)"},axisLine:false,tickLine:false}),
-                h(Tooltip,{contentStyle:{background:"#111827",border:"1px solid #1E293B",borderRadius:10,fontSize:12,color:"#F1F5F9",padding:"10px 14px"},
+                h(Tooltip,{contentStyle:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:10,fontSize:12,color:"var(--text)",padding:"10px 14px"},
                   labelStyle:{color:"var(--teal)",fontWeight:700,marginBottom:4},
-                  itemStyle:{color:"#94A3B8"},cursor:{fill:"rgba(0,229,160,0.04)"}}),
+                  itemStyle:{color:"var(--text-muted)"},cursor:{fill:"rgba(0,229,160,0.04)"}}),
                 h(Bar,{yAxisId:"kwh",dataKey:"kwh",fill:"var(--blue)",radius:[6,6,0,0],name:"Usage (kWh)"}),
                 h(Bar,{yAxisId:"cost",dataKey:"cost",fill:"var(--teal)",radius:[6,6,0,0],name:"Cost (₹)",fillOpacity:0.75})
               )
@@ -1822,7 +1822,7 @@ function GrihaNet(){
               /* Room pills */
               h("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}},
                 h("button",{onClick:()=>setSelectedRoom(null),style:{padding:"3px 10px",borderRadius:20,border:`1px solid ${!selectedRoom?T.accent+"99":T.border}`,background:!selectedRoom?T.accentDim:"transparent",color:!selectedRoom?T.accent:T.textSec,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",transition:"all .2s"}},"All"),
-                roomData.map((r,i)=>h("button",{key:i,onClick:()=>setSelectedRoom(selectedRoom===r.name?null:r.name),style:{padding:"3px 10px",borderRadius:20,border:`1px solid ${selectedRoom===r.name?r.color+"99":T.border}`,background:selectedRoom===r.name?r.color+"22":"transparent",color:selectedRoom===r.name?r.color:T.text,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",display:"flex",alignItems:"center",gap:4,transition:"all .2s"}},
+                roomData.map((r,i)=>h("button",{key:i,onClick:()=>setSelectedRoom(selectedRoom===r.name?null:r.name),style:{padding:"3px 10px",borderRadius:20,border:`1px solid ${selectedRoom===r.name?r.color+"99":T.border}`,background:selectedRoom===r.name?r.color+"22":"transparent",color:selectedRoom===r.name?r.color:"var(--text)",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",display:"flex",alignItems:"center",gap:4,transition:"all .2s"}},
                   h("span",{style:{width:7,height:7,borderRadius:"50%",background:r.color,display:"inline-block"}}),r.name
                 ))
               ),
@@ -1832,7 +1832,7 @@ function GrihaNet(){
                   h(Pie,{data:roomData,cx:"50%",cy:"50%",innerRadius:55,outerRadius:72,dataKey:"value",paddingAngle:4,strokeWidth:0,onClick:(d)=>setSelectedRoom(selectedRoom===d.name?null:d.name)},
                     roomData.map((r,i)=>h(Cell,{key:i,fill:selectedRoom&&selectedRoom!==r.name?r.color+"28":r.color,style:{cursor:"pointer",outline:"none",filter:selectedRoom===r.name?"drop-shadow(0 0 8px "+r.color+")":"none",transition:"all .3s"}}))
                   ),
-                  h(Tooltip,{contentStyle:{background:"#111827",border:"1px solid #1E293B",borderRadius:10,fontSize:12,color:"#F1F5F9"},formatter:(v,n)=>[v+"W",n]})
+                  h(Tooltip,{contentStyle:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:10,fontSize:12,color:"var(--text)"},formatter:(v,n)=>[v+"W",n]})
                 )
               ),
               /* Custom legend */
@@ -1853,24 +1853,24 @@ function GrihaNet(){
                   )
                 ))
               )
-            ):h("div",{style:{textAlign:"center",padding:30,color:T.textMuted}},"All appliances are off")
+            ):h("div",{style:{textAlign:"center",padding:30,color:"var(--text-muted)"}},"All appliances are off")
           )
         ),
 
         /* ── Add Appliance Modal ── */
         showAddAppliance&&h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(6px)"}},
-          h("div",{style:{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:28,width:360,boxShadow:"0 24px 60px rgba(0,0,0,.5)"}},
+          h("div",{style:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:16,padding:28,width:360,boxShadow:"0 24px 60px rgba(0,0,0,.5)"}},
             h("h3",{style:{margin:"0 0 18px 0",fontSize:16,fontWeight:700}},"➕ Add Appliance"),
             [["Name","name","text","e.g. Air Cooler"],["Icon (emoji)","icon","text","e.g. 🌬️"],["Watts","watts","number","e.g. 200"]].map(([label,key,type,ph])=>h(React.Fragment,{key:key},
-              h("label",{style:{fontSize:11,fontWeight:600,color:T.textSec,display:"block",marginBottom:4}},label.toUpperCase()),
-              h("input",{type,placeholder:ph,value:newAppl[key],onChange:e=>setNewAppl(p=>({...p,[key]:e.target.value})),style:{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:13,fontFamily:"'DM Sans'",outline:"none",marginBottom:12}})
+              h("label",{style:{fontSize:11,fontWeight:600,color:"var(--text-muted)",display:"block",marginBottom:4}},label.toUpperCase()),
+              h("input",{type,placeholder:ph,value:newAppl[key],onChange:e=>setNewAppl(p=>({...p,[key]:e.target.value})),style:{width:"100%",padding:"10px 12px",borderRadius:8,border:"1px solid var(--border)",background:"var(--bg-card)",color:"var(--text)",fontSize:13,fontFamily:"'DM Sans'",outline:"none",marginBottom:12}})
             )),
-            h("label",{style:{fontSize:11,fontWeight:600,color:T.textSec,display:"block",marginBottom:4}},"ROOM"),
-            h("select",{value:newAppl.room,onChange:e=>setNewAppl(p=>({...p,room:e.target.value})),style:{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:13,fontFamily:"'DM Sans'",marginBottom:16}},
+            h("label",{style:{fontSize:11,fontWeight:600,color:"var(--text-muted)",display:"block",marginBottom:4}},"ROOM"),
+            h("select",{value:newAppl.room,onChange:e=>setNewAppl(p=>({...p,room:e.target.value})),style:{width:"100%",padding:"10px 12px",borderRadius:8,border:"1px solid var(--border)",background:"var(--bg-card)",color:"var(--text)",fontSize:13,fontFamily:"'DM Sans'",marginBottom:16}},
               ["Bedroom","Kitchen","Living Room","Bathroom","All Rooms"].map(r=>h("option",{key:r,value:r},r))
             ),
             h("div",{style:{display:"flex",gap:10}},
-              h("button",{onClick:()=>setShowAddAppliance(false),style:{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.text,cursor:"pointer",fontWeight:600,fontFamily:"'DM Sans'"}},"Cancel"),
+              h("button",{onClick:()=>setShowAddAppliance(false),style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid var(--border)",background:"transparent",color:"var(--text)",cursor:"pointer",fontWeight:600,fontFamily:"'DM Sans'"}},"Cancel"),
               h("button",{onClick:addAppliance,disabled:!newAppl.name.trim(),style:{flex:1,padding:"10px",borderRadius:10,border:"none",background:newAppl.name.trim()?T.gradient1:T.border,color:newAppl.name.trim()?"#000":T.textMuted,cursor:newAppl.name.trim()?"pointer":"default",fontWeight:700,fontFamily:"'DM Sans'"}},"Add Appliance")
             )
           )
@@ -1970,7 +1970,7 @@ function GrihaNet(){
         /* Stat cards */
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12,marginBottom:16}},
           h("div",{className:"fadeUp d1"},h(Stat,{label:"Bandwidth Used",value:totalBw,unit:"GB today",icon:"\uD83D\uDCCA",color:T.blue})),
-          h("div",{className:"fadeUp d2"},h(Stat,{label:"Devices Online",value:onlineCount,unit:`/ ${devices.length}`,icon:"\uD83D\uDCE1",color:T.accent})),
+          h("div",{className:"fadeUp d2"},h(Stat,{label:"Devices Online",value:onlineCount,unit:`/ ${devices.length}`,icon:"\uD83D\uDCE1",color:"var(--teal)"})),
           h("div",{className:"fadeUp d3"},h(Stat,{label:"Blocked Devices",value:devices.filter(d=>d.blocked).length,unit:"",icon:"\uD83D\uDEAB",color:T.red}))
         ),
 
@@ -1995,8 +1995,8 @@ function GrihaNet(){
               h(CartesianGrid,{strokeDasharray:"3 3",stroke:"#1E293B",vertical:false}),
               h(XAxis,{dataKey:"hour",tick:{fontSize:9,fill:"var(--text-dim)"},interval:3,axisLine:false,tickLine:false}),
               h(YAxis,{tick:{fontSize:9,fill:"var(--text-dim)"},axisLine:false,tickLine:false,unit:" GB"}),
-              h(Tooltip,{contentStyle:{background:"#111827",border:"1px solid #1E293B",borderRadius:10,fontSize:12,color:"#F1F5F9",padding:"10px 14px"},
-                labelStyle:{color:"var(--teal)",fontWeight:700},itemStyle:{color:"#94A3B8"},cursor:{fill:"rgba(0,229,160,0.04)"}}),
+              h(Tooltip,{contentStyle:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:10,fontSize:12,color:"var(--text)",padding:"10px 14px"},
+                labelStyle:{color:"var(--teal)",fontWeight:700},itemStyle:{color:"var(--text-muted)"},cursor:{fill:"rgba(0,229,160,0.04)"}}),
               h(Area,{type:"monotone",dataKey:"down",stroke:"var(--teal)",strokeWidth:2,fill:"url(#bwDown)",name:"Download"}),
               h(Area,{type:"monotone",dataKey:"up",stroke:"var(--blue)",strokeWidth:1.5,fill:"url(#bwUp)",name:"Upload"})
             )
@@ -2071,36 +2071,36 @@ function GrihaNet(){
       /* ═══ CAMERAS ═══ */
       tab==="cameras"&&h(React.Fragment,null,
         /* Add Camera Modal */
-        showAddCamera&&h("div",{style:{position:"fixed",inset:0,background:"#000c",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center"}},
-          h("div",{style:{background:T.card,border:`1px solid ${T.border}`,borderRadius:24,padding:32,width:"100%",maxWidth:420,boxShadow:"0 20px 60px rgba(0,0,0,.6)",animation:"zoomIn .3s ease"}},
+        showAddCamera&&h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",backdropFilter:"blur(4px)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center"}},
+          h("div",{style:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:24,padding:32,width:"100%",maxWidth:420,boxShadow:"0 20px 60px rgba(0,0,0,.6)",animation:"zoomIn .3s ease"}},
             h("h3",{style:{margin:"0 0 6px",fontSize:20}},"📹 Add New Camera"),
-            h("p",{style:{margin:"0 0 20px",fontSize:12,color:T.textMuted}},"Camera will be added as active immediately"),
+            h("p",{style:{margin:"0 0 20px",fontSize:12,color:"var(--text-muted)"}},"Camera will be added as active immediately"),
             h("form",{onSubmit:addCamera,style:{display:"flex",flexDirection:"column",gap:14}},
               h("div",null,
-                h("label",{style:{fontSize:11,fontWeight:600,color:T.textSec,display:"block",marginBottom:5}},"CAMERA NAME *"),
+                h("label",{style:{fontSize:11,fontWeight:600,color:"var(--text-muted)",display:"block",marginBottom:5}},"CAMERA NAME *"),
                 h("input",{placeholder:"e.g. Front Door, Backyard",required:true,value:camForm.name,
                   onChange:e=>setCamForm(f=>({...f,name:e.target.value})),
-                  style:{width:"100%",padding:"11px 14px",borderRadius:10,border:`1px solid ${T.border}`,
-                    background:T.surface,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}})
+                  style:{width:"100%",padding:"11px 14px",borderRadius:10,border:"1px solid var(--border)",
+                    background:"var(--bg-card)",color:"var(--text)",fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}})
               ),
               h("div",null,
-                h("label",{style:{fontSize:11,fontWeight:600,color:T.textSec,display:"block",marginBottom:5}},"LOCATION *"),
+                h("label",{style:{fontSize:11,fontWeight:600,color:"var(--text-muted)",display:"block",marginBottom:5}},"LOCATION *"),
                 h("input",{placeholder:"e.g. Ground Floor, Gate",required:true,value:camForm.location,
                   onChange:e=>setCamForm(f=>({...f,location:e.target.value})),
-                  style:{width:"100%",padding:"11px 14px",borderRadius:10,border:`1px solid ${T.border}`,
-                    background:T.surface,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}})
+                  style:{width:"100%",padding:"11px 14px",borderRadius:10,border:"1px solid var(--border)",
+                    background:"var(--bg-card)",color:"var(--text)",fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}})
               ),
               h("div",null,
-                h("label",{style:{fontSize:11,fontWeight:600,color:T.textSec,display:"block",marginBottom:5}},"STREAM URL (optional)"),
+                h("label",{style:{fontSize:11,fontWeight:600,color:"var(--text-muted)",display:"block",marginBottom:5}},"STREAM URL (optional)"),
                 h("input",{placeholder:"rtsp:// or http:// stream address",value:camForm.stream_url,
                   onChange:e=>setCamForm(f=>({...f,stream_url:e.target.value})),
-                  style:{width:"100%",padding:"11px 14px",borderRadius:10,border:`1px solid ${T.border}`,
-                    background:T.surface,color:T.text,fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}})
+                  style:{width:"100%",padding:"11px 14px",borderRadius:10,border:"1px solid var(--border)",
+                    background:"var(--bg-card)",color:"var(--text)",fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}})
               ),
               h("div",{style:{display:"flex",gap:12,marginTop:6}},
                 h("button",{type:"button",onClick:()=>setShowAddCamera(false),
-                  style:{flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,
-                    background:"transparent",color:T.text,cursor:"pointer",fontWeight:600,fontFamily:"inherit"}},"Cancel"),
+                  style:{flex:1,padding:"11px",borderRadius:10,border:"1px solid var(--border)",
+                    background:"transparent",color:"var(--text)",cursor:"pointer",fontWeight:600,fontFamily:"inherit"}},"Cancel"),
                 h("button",{type:"submit",
                   style:{flex:1,padding:"11px",borderRadius:10,border:"none",
                     background:T.accent,color:"#111",cursor:"pointer",fontWeight:700,fontFamily:"inherit"}},"Add Camera")
@@ -2110,21 +2110,21 @@ function GrihaNet(){
         ),
         /* Stat cards */
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12,marginBottom:16}},
-          h("div",{className:"fadeUp d1"},h(Stat,{label:"Active Cameras",value:activeCams,unit:`/ ${cameras.length}`,icon:"📹",color:T.accent})),
+          h("div",{className:"fadeUp d1"},h(Stat,{label:"Active Cameras",value:activeCams,unit:`/ ${cameras.length}`,icon:"📹",color:"var(--teal)"})),
           h("div",{className:"fadeUp d2"},h(Stat,{label:"Motion Events",value:totalMotion,unit:"today",icon:"🔍",color:T.orange})),
           h("div",{className:"fadeUp d3"},h(Stat,{label:"Persons Detected",value:motionLog.filter(m=>m.type==="Person").length,unit:"today",icon:"👤",color:T.red}))
         ),
         /* Camera grid header */
         h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
-          h("div",{style:{fontSize:14,fontWeight:600}},"📷 Camera Feeds ",h("span",{style:{fontSize:11,color:T.textMuted,fontWeight:400}},`(${cameras.length} cameras)`)),
+          h("div",{style:{fontSize:14,fontWeight:600}},"📷 Camera Feeds ",h("span",{style:{fontSize:11,color:"var(--text-muted)",fontWeight:400}},`(${cameras.length} cameras)`)),
           h("button",{"data-tooltip":"Add a new camera",onClick:()=>setShowAddCamera(true),
-            style:{padding:"7px 16px",borderRadius:8,border:"none",background:T.accentDim,
-              color:T.accent,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",
+            style:{padding:"7px 16px",borderRadius:8,border:"none",background:"var(--teal-glow)",
+              color:"var(--teal)",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",
               display:"flex",alignItems:"center",gap:6}},"📹 + Add Camera")
         ),
         /* Camera cards */
         cameras.length===0
-          ?h(Card,{style:{textAlign:"center",padding:40,color:T.textMuted}},
+          ?h(Card,{style:{textAlign:"center",padding:40,color:"var(--text-muted)"}},
               h("div",{style:{fontSize:40,marginBottom:12}},"📷"),
               h("div",{style:{fontSize:14,fontWeight:600,marginBottom:8}},"No cameras yet"),
               h("div",{style:{fontSize:12,marginBottom:20}},"Add your first camera to start monitoring"),
@@ -2296,7 +2296,7 @@ function GrihaNet(){
         h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
           h("div",null,
             h("h2",{style:{fontSize:18,fontWeight:700,margin:0}},"🤖 Automations"),
-            h("p",{style:{fontSize:12,color:T.textMuted,marginTop:2}},automations.length+" rule"+(automations.length!==1?"s":""))
+            h("p",{style:{fontSize:12,color:"var(--text-muted)",marginTop:2}},automations.length+" rule"+(automations.length!==1?"s":""))
           ),
           h("button",{onClick:()=>setShowAutoModal(true),
             style:{padding:"10px 20px",borderRadius:10,border:"none",background:T.gradient1,
@@ -2305,8 +2305,8 @@ function GrihaNet(){
         ),
         automations.length===0&&h(Card,{style:{textAlign:"center",padding:48}},
           h("div",{style:{fontSize:40,marginBottom:12}},"🤖"),
-          h("div",{style:{fontSize:15,fontWeight:600,color:T.text,marginBottom:6}},"No automations yet"),
-          h("div",{style:{fontSize:12,color:T.textMuted}},"Create IF-THEN rules to automate your home"),
+          h("div",{style:{fontSize:15,fontWeight:600,color:"var(--text)",marginBottom:6}},"No automations yet"),
+          h("div",{style:{fontSize:12,color:"var(--text-muted)"}},"Create IF-THEN rules to automate your home"),
           h("button",{onClick:()=>setShowAutoModal(true),
             style:{marginTop:16,padding:"10px 24px",borderRadius:10,border:"none",
               background:T.gradient1,color:"#000",fontSize:13,fontWeight:700,
@@ -2324,21 +2324,21 @@ function GrihaNet(){
               h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
                 h("div",{style:{flex:1}},
                   h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:8}},
-                    h("span",{style:{fontSize:15,fontWeight:700,color:T.text}},rule.name),
-                    firedRecently&&h("span",{style:{fontSize:10,padding:"3px 8px",borderRadius:20,background:T.accent+"22",color:T.accent,fontWeight:700,animation:"pulse 2s infinite"}},"⚡ TRIGGERED")
+                    h("span",{style:{fontSize:15,fontWeight:700,color:"var(--text)"}},rule.name),
+                    firedRecently&&h("span",{style:{fontSize:10,padding:"3px 8px",borderRadius:20,background:T.accent+"22",color:"var(--teal)",fontWeight:700,animation:"pulse 2s infinite"}},"⚡ TRIGGERED")
                   ),
                   h("div",{style:{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}},
-                    h("div",{style:{padding:"6px 12px",borderRadius:8,background:T.blueDim,border:`1px solid ${T.blue}33`,fontSize:12}},
-                      h("span",{style:{color:T.textMuted,fontSize:10,marginRight:5}},"IF"),
+                    h("div",{style:{padding:"6px 12px",borderRadius:8,background:"rgba(59,130,246,0.12)",border:`1px solid ${T.blue}33`,fontSize:12}},
+                      h("span",{style:{color:"var(--text-muted)",fontSize:10,marginRight:5}},"IF"),
                       h("strong",{style:{color:T.blue}},triggerLabel)
                     ),
                     h("span",{style:{fontSize:20}},"→"),
-                    h("div",{style:{padding:"6px 12px",borderRadius:8,background:T.accentDim,border:`1px solid ${T.accent}33`,fontSize:12}},
-                      h("span",{style:{color:T.textMuted,fontSize:10,marginRight:5}},"THEN"),
-                      h("strong",{style:{color:T.accent}},actionDisplay)
+                    h("div",{style:{padding:"6px 12px",borderRadius:8,background:"var(--teal-glow)",border:`1px solid ${T.accent}33`,fontSize:12}},
+                      h("span",{style:{color:"var(--text-muted)",fontSize:10,marginRight:5}},"THEN"),
+                      h("strong",{style:{color:"var(--teal)"}},actionDisplay)
                     )
                   ),
-                  rule.last_fired&&h("div",{style:{fontSize:10,color:T.textMuted,marginTop:6}},
+                  rule.last_fired&&h("div",{style:{fontSize:10,color:"var(--text-muted)",marginTop:6}},
                     "Last fired: "+new Date(rule.last_fired).toLocaleTimeString()
                   )
                 ),
@@ -2346,7 +2346,7 @@ function GrihaNet(){
                   h(Toggle,{on:rule.enabled,onToggle:()=>toggleAutomation(rule)}),
                   h("button",{onClick:()=>deleteAutomation(rule.id),
                     style:{padding:"6px 10px",borderRadius:8,border:"none",
-                      background:T.redDim,color:T.red,fontSize:14,cursor:"pointer"}},"🗑")
+                      background:"rgba(239,68,68,0.12)",color:"var(--danger)",fontSize:14,cursor:"pointer"}},"🗑")
                 )
               )
             );
@@ -2363,37 +2363,37 @@ function GrihaNet(){
         h("div",{style:{display:"flex",gap:8,marginBottom:16}},["general","power","network","security"].map(t=>h("button",{key:t,onClick:()=>setSettingsTab(t),style:{padding:"8px 16px",borderRadius:8,border:"none",background:settingsTab===t?T.accentDim:T.surface,color:settingsTab===t?T.accent:T.textSec,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'",textTransform:"capitalize"}},t))),
 
         settingsTab==="general"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"General Settings"),
-          h("div",{style:{display:"flex",alignItems:"center",gap:14,padding:"14px 0",marginBottom:8,borderBottom:`1px solid ${T.border}22`}},
+          h("div",{style:{display:"flex",alignItems:"center",gap:14,padding:"14px 0",marginBottom:8,borderBottom:"1px solid rgba(30,41,59,0.2)"}},
             h("div",{style:{width:44,height:44,borderRadius:12,background:user.role==="admin"?T.accentDim:T.blueDim,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:user.role==="admin"?T.accent:T.blue,flexShrink:0}},user.name.charAt(0).toUpperCase()),
             h("div",{style:{flex:1}},
-              h("div",{style:{fontSize:14,fontWeight:600,color:T.text}},user.name),
-              h("div",{style:{fontSize:11,color:T.textMuted,marginTop:1}},user.email)
+              h("div",{style:{fontSize:14,fontWeight:600,color:"var(--text)"}},user.name),
+              h("div",{style:{fontSize:11,color:"var(--text-muted)",marginTop:1}},user.email)
             ),
             h(Badge,{text:user.role.toUpperCase(),color:user.role==="admin"?T.accent:T.blue})
           ),
-          h("div",{style:{marginBottom:20,paddingBottom:16,borderBottom:`1px solid ${T.border}22`}},
+          h("div",{style:{marginBottom:20,paddingBottom:16,borderBottom:"1px solid rgba(30,41,59,0.2)"}},
             h("div",{style:{fontSize:13,fontWeight:500,marginBottom:4}},"System Report"),
-            h("div",{style:{fontSize:11,color:T.textMuted,marginBottom:12}},"Generate a comprehensive PDF summary of your home's usage and status."),
+            h("div",{style:{fontSize:11,color:"var(--text-muted)",marginBottom:12}},"Generate a comprehensive PDF summary of your home's usage and status."),
             h("button",{onClick:generatePDF,style:{padding:"10px 18px",borderRadius:8,background:T.accent,color:"#000",border:"none",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:8}},h("span",null,"📄"),"Download PDF Report")
           ),
-          [{key:"darkMode",label:"Dark Mode",desc:"Use dark theme across dashboard"},{key:"autoRefresh",label:"Auto-refresh Data",desc:"Refresh stats every 2.5 seconds"},{key:"pushNotifications",label:"Push Notifications",desc:"Toast notifications for critical alerts"},{key:"soundAlerts",label:"Sound Alerts",desc:"Play sound on high-severity alerts"},{key:"simulationMode",label:"Simulation Mode",desc:"Generate random motion events for demo"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:`1px solid ${T.border}22`}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:T.textMuted}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))),
+          [{key:"darkMode",label:"Dark Mode",desc:"Use dark theme across dashboard"},{key:"autoRefresh",label:"Auto-refresh Data",desc:"Refresh stats every 2.5 seconds"},{key:"pushNotifications",label:"Push Notifications",desc:"Toast notifications for critical alerts"},{key:"soundAlerts",label:"Sound Alerts",desc:"Play sound on high-severity alerts"},{key:"simulationMode",label:"Simulation Mode",desc:"Generate random motion events for demo"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:"var(--text-muted)"}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))),
 
         settingsTab==="power"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"Power Settings"),
-          [{key:"rate",label:"Electricity Rate (₹/kWh)",step:.5,min:1,max:20},{key:"highUsageThreshold",label:"High Usage Alert (kW)",step:.5,min:1,max:10},{key:"runtimeAlert",label:"Runtime Alert (hours)",step:.5,min:.5,max:8},{key:"monthlyBudget",label:"Monthly Budget (₹)",step:100,min:500,max:10000}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:`1px solid ${T.border}22`}},
+          [{key:"rate",label:"Electricity Rate (₹/kWh)",step:.5,min:1,max:20},{key:"highUsageThreshold",label:"High Usage Alert (kW)",step:.5,min:1,max:10},{key:"runtimeAlert",label:"Runtime Alert (hours)",step:.5,min:.5,max:8},{key:"monthlyBudget",label:"Monthly Budget (₹)",step:100,min:500,max:10000}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},
             h("div",{style:{fontSize:13,fontWeight:500}},s.label),
             h("div",{style:{display:"flex",alignItems:"center",gap:8}},
-              h("button",{onClick:()=>updateSetting(s.key,Math.max(s.min,settings[s.key]-s.step)),style:{width:28,height:28,borderRadius:6,border:`1px solid ${T.border}`,background:T.surface,color:T.text,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}},"−"),
-              h("div",{style:{minWidth:60,textAlign:"center",padding:"6px 12px",borderRadius:8,background:T.surface,border:`1px solid ${T.border}`,fontSize:13,color:T.accent,fontFamily:"'IBM Plex Mono'",fontWeight:600}},s.key==="rate"?"₹"+settings[s.key]:s.key==="monthlyBudget"?"₹"+settings[s.key].toLocaleString():settings[s.key]),
-              h("button",{onClick:()=>updateSetting(s.key,Math.min(s.max,settings[s.key]+s.step)),style:{width:28,height:28,borderRadius:6,border:`1px solid ${T.border}`,background:T.surface,color:T.text,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}},"+")
+              h("button",{onClick:()=>updateSetting(s.key,Math.max(s.min,settings[s.key]-s.step)),style:{width:28,height:28,borderRadius:6,border:"1px solid var(--border)",background:"var(--bg-card)",color:"var(--text)",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}},"−"),
+              h("div",{style:{minWidth:60,textAlign:"center",padding:"6px 12px",borderRadius:8,background:"var(--bg-card)",border:"1px solid var(--border)",fontSize:13,color:"var(--teal)",fontFamily:"'IBM Plex Mono'",fontWeight:600}},s.key==="rate"?"₹"+settings[s.key]:s.key==="monthlyBudget"?"₹"+settings[s.key].toLocaleString():settings[s.key]),
+              h("button",{onClick:()=>updateSetting(s.key,Math.min(s.max,settings[s.key]+s.step)),style:{width:28,height:28,borderRadius:6,border:"1px solid var(--border)",background:"var(--bg-card)",color:"var(--text)",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}},"+")
             )
           ))),
 
         settingsTab==="network"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"Network Settings"),
-          [{key:"autoBlockUnknown",label:"Auto-block Unknown Devices",desc:"Block unrecognized MAC addresses"},{key:"bandwidthAlert",label:"Bandwidth Alert",desc:`Alert when device exceeds ${settings.bandwidthThreshold} GB/day`},{key:"parentalControls",label:"Parental Controls",desc:"Time-based internet restrictions"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:`1px solid ${T.border}22`}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:T.textMuted}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))),
+          [{key:"autoBlockUnknown",label:"Auto-block Unknown Devices",desc:"Block unrecognized MAC addresses"},{key:"bandwidthAlert",label:"Bandwidth Alert",desc:`Alert when device exceeds ${settings.bandwidthThreshold} GB/day`},{key:"parentalControls",label:"Parental Controls",desc:"Time-based internet restrictions"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:"var(--text-muted)"}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))),
 
         settingsTab==="security"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"Security Settings"),
-          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:`1px solid ${T.border}22`}},h("div",{style:{fontSize:13,fontWeight:500}},"Motion Sensitivity"),h("div",{style:{display:"flex",gap:6}},["Low","Medium","High"].map(l=>h("button",{key:l,onClick:()=>updateSetting("motionSensitivity",l),style:{padding:"6px 14px",borderRadius:8,border:`1px solid ${settings.motionSensitivity===l?T.accent+"44":T.border}`,background:settings.motionSensitivity===l?T.accentDim:T.surface,color:settings.motionSensitivity===l?T.accent:T.textSec,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'"}},l)))),
-          [{key:"snapshotOnMotion",label:"Snapshot on Motion",desc:"Save image on motion"},{key:"recordClips",label:"Record Clips",desc:"15-sec clips on events"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:`1px solid ${T.border}22`}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:T.textMuted}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},h("div",{style:{fontSize:13,fontWeight:500}},"Motion Sensitivity"),h("div",{style:{display:"flex",gap:6}},["Low","Medium","High"].map(l=>h("button",{key:l,onClick:()=>updateSetting("motionSensitivity",l),style:{padding:"6px 14px",borderRadius:8,border:`1px solid ${settings.motionSensitivity===l?T.accent+"44":T.border}`,background:settings.motionSensitivity===l?T.accentDim:T.surface,color:settings.motionSensitivity===l?T.accent:T.textSec,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'"}},l)))),
+          [{key:"snapshotOnMotion",label:"Snapshot on Motion",desc:"Save image on motion"},{key:"recordClips",label:"Record Clips",desc:"15-sec clips on events"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:"var(--text-muted)"}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))
         ),
         
         /* TERMINAL WIDGET */
@@ -2401,7 +2401,7 @@ function GrihaNet(){
       )
     ),
     /* FOOTER */
-    h("footer",{style:{padding:"16px 20px",borderTop:`1px solid ${T.border}`,textAlign:"center"}},h("span",{style:{fontSize:11,color:T.textMuted}},"GrihaNet v1.0 • Built by Team GrihaNet • VIT Vellore © 2026")),
+    h("footer",{style:{padding:"16px 20px",borderTop:`1px solid ${T.border}`,textAlign:"center"}},h("span",{style:{fontSize:11,color:"var(--text-muted)"}},"GrihaNet v1.0 • Built by Team GrihaNet • VIT Vellore © 2026")),
     
     /* 💬 CHAT WIDGET */
     h(ChatWidget, {user, appliances, devices, cameras, alerts})

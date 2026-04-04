@@ -386,12 +386,72 @@
       animation: shimmer 1.5s infinite;
       border-radius: var(--radius-sm);
     }
+
+    /* ─────────────────────────────────────────────────
+       LIGHT MODE — Component-specific overrides
+       These handle elements that can't use CSS vars
+    ───────────────────────────────────────────────── */
+
+    /* Header frosted glass */
+    [data-theme="light"] header,
+    [data-theme="light"] [style*="backdrop-filter"] {
+      border-color: var(--border);
+    }
+
+    /* Recharts tooltip */
+    [data-theme="light"] .recharts-tooltip-wrapper .recharts-default-tooltip {
+      background: #ffffff !important;
+      border: 1px solid var(--border) !important;
+      color: var(--text) !important;
+    }
+
+    /* Recharts grid lines */
+    [data-theme="light"] .recharts-cartesian-grid-horizontal line,
+    [data-theme="light"] .recharts-cartesian-grid-vertical  line {
+      stroke: var(--border) !important;
+    }
+
+    /* Placeholder text */
+    [data-theme="light"] input::placeholder,
+    [data-theme="light"] textarea::placeholder { color: var(--text-dim); }
+
+    /* Stat card background */
+    [data-theme="light"] .stat-card {
+      background: var(--bg-card);
+      border-color: var(--border);
+    }
+
+    /* Card borders */
+    [data-theme="light"] .card {
+      border-color: var(--border);
+    }
+
+    /* Alert row hover */
+    [data-theme="light"] .alert-row:hover {
+      background: var(--bg-card-hover) !important;
+    }
+
+    /* Toast glass */
+    [data-theme="light"] .toast-glass {
+      background: rgba(255,255,255,0.92) !important;
+    }
+
+    /* Sticky tab nav */
+    [data-theme="light"] nav {
+      background: var(--bg) !important;
+      border-color: var(--border) !important;
+    }
+
+    /* Chat window light */
+    [data-theme="light"] .chat-window {
+      background: rgba(255,255,255,0.96) !important;
+    }
 </style>
 </head>
 <body>
   <div id="root"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script type="text/javascript" src="/static/js/app.js?v=33"></script>
+  <script type="text/javascript" src="/static/js/app.js?v=34"></script>
   <script>
     // Unregister stale service workers and clear caches to prevent black screen
     if ('serviceWorker' in navigator) {

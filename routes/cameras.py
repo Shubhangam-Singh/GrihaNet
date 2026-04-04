@@ -97,14 +97,17 @@ def simulate_motion():
     )
     db.session.add(motion)
 
-    # Auto-generate alert for high severity
-    if event_data["severity"] == "high":
-        alert = Alert(
-            alert_type="warning",
-            message=f"{event_data['type']} detected at {cam.name} camera",
-            icon="📹", module="Security", user_id=uid,
-        )
-        db.session.add(alert)
+    # Map severity → alert type
+    sev_to_type = {"high": "danger", "medium": "warning", "low": "info"}
+    alert_type = sev_to_type.get(event_data["severity"], "info")
+
+    # Always generate alert (not just for high severity)
+    alert = Alert(
+        alert_type=alert_type,
+        message=f"{event_data['type']} detected at {cam.name} camera",
+        icon="📹", module="Security", user_id=uid,
+    )
+    db.session.add(alert)
 
     db.session.commit()
 
