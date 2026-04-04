@@ -99,7 +99,64 @@
       min-height: 100vh;
       scrollbar-color: var(--border) transparent;
       scrollbar-width: thin;
+      position: relative;
+      isolation: isolate;
     }
+
+    /* ── DESIGNER BACKGROUND — Radial orbs + dot grid ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      background:
+        /* Top-left teal orb */
+        radial-gradient(ellipse 60% 50% at -10% 5%,  rgba(0,229,160,0.13) 0%, transparent 70%),
+        /* Top-right blue orb */
+        radial-gradient(ellipse 55% 45% at 110% 0%,  rgba(59,130,246,0.12) 0%, transparent 65%),
+        /* Center-right purple orb */
+        radial-gradient(ellipse 45% 55% at 105% 55%, rgba(139,92,246,0.09) 0%, transparent 60%),
+        /* Bottom-left accent orb */
+        radial-gradient(ellipse 50% 40% at -5% 100%, rgba(0,229,160,0.08) 0%, transparent 60%),
+        /* Center subtle glow */
+        radial-gradient(ellipse 70% 40% at 50% 50%,  rgba(59,130,246,0.04) 0%, transparent 70%);
+      animation: orbDrift 18s ease-in-out infinite alternate;
+    }
+
+    /* Dot-grid texture overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      opacity: 0.35;
+      background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+    }
+
+    /* Light mode: softer, pastel orbs */
+    [data-theme="light"] body::before {
+      background:
+        radial-gradient(ellipse 60% 50% at -10% 5%,  rgba(0,163,112,0.10) 0%, transparent 70%),
+        radial-gradient(ellipse 55% 45% at 110% 0%,  rgba(32,112,224,0.09) 0%, transparent 65%),
+        radial-gradient(ellipse 45% 55% at 105% 55%, rgba(124,58,205,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at -5% 100%, rgba(0,163,112,0.06) 0%, transparent 60%);
+    }
+    [data-theme="light"] body::after {
+      opacity: 0.22;
+    }
+
+    @keyframes orbDrift {
+      0%   { background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%; }
+      33%  { background-position: 2% 3%, -2% 2%, 1% -1%, -1% 2%, 0.5% 1%; }
+      66%  { background-position: -1% 2%, 1% -1%, -2% 3%, 2% -2%, -1% 0.5%; }
+      100% { background-position: 1% -1%, -1% 1%, 2% -2%, -1% 1%, 1% -0.5%; }
+    }
+
     ::selection {
       background: var(--teal-glow);
       color: var(--teal);
