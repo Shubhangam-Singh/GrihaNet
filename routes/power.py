@@ -2,7 +2,7 @@
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Appliance, PowerReading, Settings
+from models import db, Appliance, PowerReading, Settings, Alert
 from services.simulation import (
     generate_power_history_24h, generate_weekly_data, get_energy_recommendations
 )
@@ -56,6 +56,17 @@ def toggle_appliance(aid):
     uid = get_jwt_identity()
     appliance = Appliance.query.filter_by(id=aid, user_id=uid).first_or_404()
     appliance.is_on = not appliance.is_on
+
+    # Create an alert: success when turning ON, info when turning OFF
+    status_label = 'ON' if appliance.is_on else 'OFF'
+    icon = '✅' if appliance.is_on else '🔌'
+    alert = Alert(
+        alert_type='success' if appliance.is_on else 'info',
+        message=f"{appliance.name} turned {status_label} successfully",
+        icon=icon, module='Power', user_id=uid,
+        is_read=True,  # mark as read so it doesn't bloat unread count
+    )
+    db.session.add(alert)
     db.session.commit()
 
     return jsonify({

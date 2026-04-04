@@ -1486,12 +1486,13 @@ function GrihaNet(){
     h("header",{
       style:{
         position:"fixed",top:0,left:0,right:0,height:60,zIndex:1000,
-        background:"rgba(10,15,26,0.88)",
+        background:"var(--bg-card)",
         backdropFilter:"blur(20px) saturate(180%)",
         WebkitBackdropFilter:"blur(20px) saturate(180%)",
         borderBottom:"1px solid var(--border)",
         display:"flex",alignItems:"center",justifyContent:"space-between",
         padding:"0 24px",
+        boxShadow:"0 1px 16px rgba(0,0,0,0.18)",
       }
     },
       /* Left — logo */
@@ -1609,10 +1610,9 @@ function GrihaNet(){
           }
         },
         onMouseLeave:e=>{
-          if(tab!==t.id){
-            e.currentTarget.style.color="var(--text-muted)";
-            e.currentTarget.style.background="transparent";
-          }
+          const isActive=tab===t.id;
+          e.currentTarget.style.color=isActive?"var(--teal)":"var(--text-muted)";
+          e.currentTarget.style.background="transparent";
         },
       },
         h("span",{style:{fontSize:15}},t.icon),
@@ -1827,10 +1827,15 @@ function GrihaNet(){
                 ))
               ),
               /* Donut */
-              h(ResponsiveContainer,{width:"100%",height:155},
+              h(ResponsiveContainer,{width:"100%",height:160},
                 h(PieChart,null,
-                  h(Pie,{data:roomData,cx:"50%",cy:"50%",innerRadius:55,outerRadius:72,dataKey:"value",paddingAngle:4,strokeWidth:0,onClick:(d)=>setSelectedRoom(selectedRoom===d.name?null:d.name)},
-                    roomData.map((r,i)=>h(Cell,{key:i,fill:selectedRoom&&selectedRoom!==r.name?r.color+"28":r.color,style:{cursor:"pointer",outline:"none",filter:selectedRoom===r.name?"drop-shadow(0 0 8px "+r.color+")":"none",transition:"all .3s"}}))
+                  h(Pie,{data:roomData,cx:"50%",cy:"50%",innerRadius:52,outerRadius:70,dataKey:"value",paddingAngle:3,strokeWidth:0,onClick:(d)=>setSelectedRoom(selectedRoom===d.name?null:d.name)},
+                    roomData.map((r,i)=>h(Cell,{key:i,
+                      fill:r.color,
+                      opacity:selectedRoom&&selectedRoom!==r.name?0.35:1,
+                      style:{cursor:"pointer",outline:"none",
+                        filter:selectedRoom===r.name?"drop-shadow(0 0 10px "+r.color+") brightness(1.15)":"none",
+                        transition:"all .3s"}}))
                   ),
                   h(Tooltip,{contentStyle:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:10,fontSize:12,color:"var(--text)"},formatter:(v,n)=>[v+"W",n]})
                 )
