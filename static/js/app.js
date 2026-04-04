@@ -599,7 +599,7 @@ function AuthScreen({onLogin}){
   const isLogin=mode==="login";
   const h=React.createElement;
 
-  return h("div",{style:{minHeight:"100vh",background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans'"}},
+  return h("div",{style:{minHeight:"100vh",background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans'"}},
     h("div",{style:{position:"absolute",inset:0,background:`radial-gradient(circle at 30% 40%,${T.accent}08 0%,transparent 50%),radial-gradient(circle at 70% 70%,${T.blue}06 0%,transparent 50%)`}}),
     h("div",{className:"fadeUp",style:{width:400,position:"relative",zIndex:1}},
       h("div",{style:{textAlign:"center",marginBottom:28}},
@@ -1479,7 +1479,7 @@ function GrihaNet(){
   if(user?.role==="admin") tabs.push({id:"admin",icon:"🛡️",label:"Admin",tooltip:"Admin control panel"});
   tabs.push({id:"settings",icon:"⚙️",label:"Settings",tooltip:"App preferences & reports"});
 
-  return h("div",{style:{minHeight:"100vh",background:"var(--bg)",color:"var(--text)",fontFamily:"'DM Sans',sans-serif"}},
+  return h("div",{style:{minHeight:"100vh",background:"transparent",color:"var(--text)",fontFamily:"'DM Sans',sans-serif"}},
     h(Toast,{toasts,onDismiss:dismissToast}),
 
     /* ═══ HEADER — fixed frosted glass bar ═══ */
