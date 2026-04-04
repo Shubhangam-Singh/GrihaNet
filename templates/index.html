@@ -183,8 +183,11 @@
     }
 
     /* ── CUSTOM INTERACTIVE CURSOR ── */
-    body, html, *:not(input):not(textarea) { cursor: none !important; }
+    body.custom-cursor-active, body.custom-cursor-active *:not(input):not(textarea) { cursor: none !important; }
     input, textarea { cursor: text !important; }
+
+    .custom-cursor-dot, .custom-cursor-outline { display: none; }
+    body.custom-cursor-active .custom-cursor-dot, body.custom-cursor-active .custom-cursor-outline { display: block; }
 
     .custom-cursor-dot {
       position: fixed; top: 0; left: 0; width: 6px; height: 6px;
@@ -606,6 +609,14 @@
           isAnimating = false;
           ctx.clearRect(0, 0, w, h);
         }
+      };
+
+      let useCustomCursor = localStorage.getItem('grihanet_customCursor') !== 'false';
+      if(useCustomCursor) document.body.classList.add('custom-cursor-active');
+      window.setCustomCursor = (val) => {
+        useCustomCursor = val;
+        if(val) document.body.classList.add('custom-cursor-active');
+        else document.body.classList.remove('custom-cursor-active');
       };
 
       // Mouse tracking

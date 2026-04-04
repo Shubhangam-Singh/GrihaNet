@@ -1242,7 +1242,9 @@ function GrihaNet(){
   const [newAppl,setNewAppl]=useState({name:"",icon:"🔌",watts:"100",room:"Bedroom"});
   const [themeVersion,setThemeVersion]=useState(0);
   const [settings,setSettings]=useState({
-    darkMode:true,autoRefresh:true,pushNotifications:true,soundAlerts:false,simulationMode:true,bgAnimations:localStorage.getItem('grihanet_bgAnimations')!=='false',
+    darkMode:true,autoRefresh:true,pushNotifications:true,soundAlerts:false,simulationMode:true,
+    bgAnimations:localStorage.getItem('grihanet_bgAnimations')!=='false',
+    customCursor:localStorage.getItem('grihanet_customCursor')!=='false',
     rate:6.5,highUsageThreshold:4.5,runtimeAlert:2,monthlyBudget:2500,
     autoBlockUnknown:false,bandwidthAlert:true,bandwidthThreshold:10,parentalControls:false,
     motionSensitivity:"High",alertHoursStart:"23:00",alertHoursEnd:"06:00",
@@ -1416,6 +1418,10 @@ function GrihaNet(){
     if(key==="bgAnimations"){
       try{localStorage.setItem('grihanet_bgAnimations',String(val));}catch(e){}
       if(window.setBgAnimations) window.setBgAnimations(val);
+    }
+    if(key==="customCursor"){
+      try{localStorage.setItem('grihanet_customCursor',String(val));}catch(e){}
+      if(window.setCustomCursor) window.setCustomCursor(val);
     }
     addToast("⚙️","Settings Updated",key.replace(/([A-Z])/g," $1")+" changed",T.accent);
   };
@@ -2385,7 +2391,7 @@ function GrihaNet(){
             h("div",{style:{fontSize:11,color:"var(--text-muted)",marginBottom:12}},"Generate a comprehensive PDF summary of your home's usage and status."),
             h("button",{onClick:generatePDF,style:{padding:"10px 18px",borderRadius:8,background:T.accent,color:"#000",border:"none",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:8}},h("span",null,"📄"),"Download PDF Report")
           ),
-          [{key:"darkMode",label:"Dark Mode",desc:"Use dark theme across dashboard"},{key:"bgAnimations",label:"Background Animations",desc:"Interactive canvas and motion effects"},{key:"autoRefresh",label:"Auto-refresh Data",desc:"Refresh stats every 2.5 seconds"},{key:"pushNotifications",label:"Push Notifications",desc:"Toast notifications for critical alerts"},{key:"soundAlerts",label:"Sound Alerts",desc:"Play sound on high-severity alerts"},{key:"simulationMode",label:"Simulation Mode",desc:"Generate random motion events for demo"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:"var(--text-muted)"}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))),
+          [{key:"darkMode",label:"Dark Mode",desc:"Use dark theme across dashboard"},{key:"bgAnimations",label:"Background Animations",desc:"Interactive canvas and motion effects"},{key:"customCursor",label:"Custom Cursor",desc:"Interactive designer mouse pointer"},{key:"autoRefresh",label:"Auto-refresh Data",desc:"Refresh stats every 2.5 seconds"},{key:"pushNotifications",label:"Push Notifications",desc:"Toast notifications for critical alerts"},{key:"soundAlerts",label:"Sound Alerts",desc:"Play sound on high-severity alerts"},{key:"simulationMode",label:"Simulation Mode",desc:"Generate random motion events for demo"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:"var(--text-muted)"}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))),
 
         settingsTab==="power"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"Power Settings"),
           [{key:"rate",label:"Electricity Rate (₹/kWh)",step:.5,min:1,max:20},{key:"highUsageThreshold",label:"High Usage Alert (kW)",step:.5,min:1,max:10},{key:"runtimeAlert",label:"Runtime Alert (hours)",step:.5,min:.5,max:8},{key:"monthlyBudget",label:"Monthly Budget (₹)",step:100,min:500,max:10000}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},
