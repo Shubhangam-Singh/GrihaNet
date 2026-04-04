@@ -157,9 +157,57 @@
       100% { background-position: 1% -1%, -1% 1%, 2% -2%, -1% 1%, 1% -0.5%; }
     }
 
+    /* Hexagon texture pan */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: -50%; /* Allow for panning */
+      z-index: -2;
+      pointer-events: none;
+      opacity: 0.15;
+      background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0l20 10v20L20 40 0 30V10z' fill-rule='evenodd' stroke='%2300E5A0' stroke-width='0.5' fill='none'/%3E%3C/svg%3E");
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+      animation: hexPan 60s linear infinite;
+    }
+    [data-theme="light"] body::after { opacity: 0.08; }
+
+    @keyframes hexPan {
+      0%   { transform: translate(0, 0); }
+      100% { transform: translate(-40px, -40px); }
+    }
+
     ::selection {
       background: var(--teal-glow);
       color: var(--teal);
+    }
+
+    /* ── CUSTOM INTERACTIVE CURSOR ── */
+    body, html, *:not(input):not(textarea) { cursor: none !important; }
+    input, textarea { cursor: text !important; }
+
+    .custom-cursor-dot {
+      position: fixed; top: 0; left: 0; width: 6px; height: 6px;
+      background: var(--teal); border-radius: 50%; pointer-events: none; z-index: 10000;
+      transform: translate(-50%, -50%);
+      transition: width 0.2s, height 0.2s, background 0.2s;
+    }
+    .custom-cursor-outline {
+      position: fixed; top: 0; left: 0; width: 36px; height: 36px;
+      border: 1.5px solid var(--teal); border-radius: 50%; pointer-events: none; z-index: 9999;
+      transform: translate(-50%, -50%); /* Base transform */
+      transition: width 0.2s, height 0.2s, background 0.2s, border-color 0.2s;
+    }
+    body.cursor-hover .custom-cursor-dot {
+      background: transparent;
+    }
+    body.cursor-hover .custom-cursor-outline {
+      width: 50px; height: 50px;
+      background: var(--teal-glow);
+      border-color: var(--teal);
+    }
+    [data-theme="light"] .custom-cursor-outline {
+      border-color: rgba(0, 163, 112, 0.8);
     }
 
     /* ── SCROLLBAR (WebKit) ── */
@@ -506,9 +554,39 @@
 </style>
 </head>
 <body>
+  <!-- Custom Cursor Elements -->
+  <div id="custom-cursor-dot" class="custom-cursor-dot"></div>
+  <div id="custom-cursor-outline" class="custom-cursor-outline"></div>
+
   <canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-1;pointer-events:none;"></canvas>
   <script>
     (function(){
+      // Cursor logic
+      const dot = document.getElementById('custom-cursor-dot');
+      const outline = document.getElementById('custom-cursor-outline');
+      
+      window.addEventListener('mousemove', (e) => {
+        if(dot && outline) {
+          dot.style.left = e.clientX + 'px';
+          dot.style.top = e.clientY + 'px';
+          
+          outline.animate({
+            left: e.clientX + 'px',
+            top: e.clientY + 'px'
+          }, { duration: 150, fill: "forwards" });
+        }
+      });
+      
+      document.body.addEventListener('mouseover', (e) => {
+        const target = e.target;
+        if(target.tagName === 'BUTTON' || target.tagName === 'A' || target.closest('button') || target.tagName === 'svg' || target.closest('.card') || target.closest('.stat-card')) {
+          document.body.classList.add('cursor-hover');
+        } else {
+          document.body.classList.remove('cursor-hover');
+        }
+      });
+
+      // Canvas Background Logic
       const canvas = document.getElementById('bg-canvas');
       const ctx = canvas.getContext('2d');
       let w, h;
@@ -518,6 +596,17 @@
       }
       window.addEventListener('resize', resize);
       resize();
+
+      let isAnimating = localStorage.getItem('grihanet_bgAnimations') !== 'false';
+      window.setBgAnimations = (val) => {
+        if(val && !isAnimating) {
+          isAnimating = true;
+          requestAnimationFrame(draw);
+        } else if(!val) {
+          isAnimating = false;
+          ctx.clearRect(0, 0, w, h);
+        }
+      };
 
       // Mouse tracking
       const mouse = { x: null, y: null, radius: 250 };
@@ -578,6 +667,7 @@
       }
 
       function draw() {
+        if(!isAnimating) return;
         ctx.clearRect(0, 0, w, h);
         
         ctx.lineWidth = 1;
@@ -667,12 +757,12 @@
 
         requestAnimationFrame(draw);
       }
-      draw();
+      if (isAnimating) draw();
     })();
   </script>
   <div id="root"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script type="text/javascript" src="/static/js/app.js?v=37"></script>
+  <script type="text/javascript" src="/static/js/app.js?v=38"></script>
   <script>
     // Unregister stale service workers and clear caches to prevent black screen
     if ('serviceWorker' in navigator) {
