@@ -519,49 +519,84 @@
       window.addEventListener('resize', resize);
       resize();
 
+      // Mouse tracking
+      const mouse = { x: null, y: null, radius: 250 };
+      window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+      window.addEventListener('mouseout', () => {
+        mouse.x = null;
+        mouse.y = null;
+      });
+
       const particles = [];
       const config = {
-        particleCount: 75,
-        particleColor: 'rgba(0, 229, 160, 0.4)', // Teal
-        lineColor: 'rgba(0, 229, 160, 0.15)',
-        particleRadius: 2,
-        maxVelocity: 0.6,
-        connectDistance: 150
+        particleCount: 110,
+        colors: {
+          teal: 'rgba(0, 229, 160, 0.5)',
+          blue: 'rgba(59, 130, 246, 0.4)',
+          mouseLineTeal: 'rgba(0, 229, 160, 0.5)',
+          mouseLineBlue: 'rgba(59, 130, 246, 0.4)',
+          lineTeal: 'rgba(0, 229, 160, 0.15)',
+          lineBlue: 'rgba(59, 130, 246, 0.1)'
+        },
+        maxVelocity: 0.8,
+        connectDistance: 130
       };
 
-      // Theme observer for real-time adaptations
       setInterval(() => {
         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-        config.particleColor = isLight ? 'rgba(0, 163, 112, 0.5)' : 'rgba(0, 229, 160, 0.6)';
-        config.lineColor = isLight ? 'rgba(0, 163, 112, 0.2)' : 'rgba(0, 229, 160, 0.2)';
+        if (isLight) {
+          config.colors.teal = 'rgba(0, 163, 112, 0.5)';
+          config.colors.blue = 'rgba(32, 112, 224, 0.5)';
+          config.colors.mouseLineTeal = 'rgba(0, 163, 112, 0.4)';
+          config.colors.mouseLineBlue = 'rgba(32, 112, 224, 0.4)';
+          config.colors.lineTeal = 'rgba(0, 163, 112, 0.2)';
+          config.colors.lineBlue = 'rgba(32, 112, 224, 0.15)';
+        } else {
+          config.colors.teal = 'rgba(0, 229, 160, 0.6)';
+          config.colors.blue = 'rgba(59, 130, 246, 0.5)';
+          config.colors.mouseLineTeal = 'rgba(0, 229, 160, 0.5)';
+          config.colors.mouseLineBlue = 'rgba(59, 130, 246, 0.4)';
+          config.colors.lineTeal = 'rgba(0, 229, 160, 0.2)';
+          config.colors.lineBlue = 'rgba(59, 130, 246, 0.15)';
+        }
       }, 500);
 
+      // Initialize particles
       for (let i = 0; i < config.particleCount; i++) {
-        particles.push({
-          x: Math.random() * w,
-          y: Math.random() * h,
-          vx: (Math.random() - 0.5) * config.maxVelocity * 2,
-          vy: (Math.random() - 0.5) * config.maxVelocity * 2
-        });
+          const isHub = Math.random() < 0.15; // 15% are larger network hubs
+          particles.push({
+            x: Math.random() * w,
+            y: Math.random() * h,
+            vx: (Math.random() - 0.5) * config.maxVelocity * (isHub ? 0.3 : 1.2),
+            vy: (Math.random() - 0.5) * config.maxVelocity * (isHub ? 0.3 : 1.2),
+            radius: isHub ? Math.random() * 2 + 2.5 : Math.random() * 1.5 + 1,
+            type: Math.random() > 0.4 ? 'teal' : 'blue'
+          });
       }
 
       function draw() {
         ctx.clearRect(0, 0, w, h);
         
-        // Draw connections
+        ctx.lineWidth = 1;
+        // Draw device-to-device connections
         for (let i = 0; i < particles.length; i++) {
           for (let j = i + 1; j < particles.length; j++) {
             const p1 = particles[i], p2 = particles[j];
             const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+            
             if (dist < config.connectDistance) {
               const opacity = 1 - (dist / config.connectDistance);
+              const isBlue = p1.type === 'blue' && p2.type === 'blue';
+              const baseLine = isBlue ? config.colors.lineBlue : config.colors.lineTeal;
               
-              // We need to extract the base rgb from rgba to inject opacity
-              let match = config.lineColor.match(/rgba\((\d+),\s*(\d+),\s*(\d+)/);
+              let match = baseLine.match(/rgba\((\d+),\s*(\d+),\s*(\d+)/);
               if (match) {
                  ctx.beginPath();
-                 ctx.strokeStyle = `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${opacity * 0.4})`;
-                 ctx.lineWidth = 1.5;
+                 ctx.strokeStyle = `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${opacity * 0.8})`;
+                 ctx.lineWidth = (p1.radius > 2 && p2.radius > 2) ? 1.5 : 0.8;
                  ctx.moveTo(p1.x, p1.y);
                  ctx.lineTo(p2.x, p2.y);
                  ctx.stroke();
@@ -570,19 +605,64 @@
           }
         }
 
-        // Draw particles
+        // Draw particles and handle movement
         for (const p of particles) {
+          // Standard movement
           p.x += p.vx;
           p.y += p.vy;
-          if (p.x < 0) p.vx = Math.abs(p.vx);
-          if (p.x > w) p.vx = -Math.abs(p.vx);
-          if (p.y < 0) p.vy = Math.abs(p.vy);
-          if (p.y > h) p.vy = -Math.abs(p.vy);
+          
+          // Warp around edges silently
+          if (p.x < -20) p.x = w + 20;
+          if (p.x > w + 20) p.x = -20;
+          if (p.y < -20) p.y = h + 20;
+          if (p.y > h + 20) p.y = -20;
 
+          // Interactive Mouse Connections & Physics
+          if (mouse.x != null && mouse.y != null) {
+            const dx = mouse.x - p.x;
+            const dy = mouse.y - p.y;
+            const distance = Math.hypot(dx, dy);
+            
+            if (distance < mouse.radius) {
+              // Mouse connecting line
+              const opacity = 1 - (distance / mouse.radius);
+              const baseLine = p.type === 'blue' ? config.colors.mouseLineBlue : config.colors.mouseLineTeal;
+              let match = baseLine.match(/rgba\((\d+),\s*(\d+),\s*(\d+)/);
+              if (match) {
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${Math.min(opacity, 0.6)})`;
+                ctx.lineWidth = p.radius > 2 ? 1.5 : 1;
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(mouse.x, mouse.y);
+                ctx.stroke();
+              }
+
+              // Gentle pull toward mouse
+              const forceX = dx / distance;
+              const forceY = dy / distance;
+              const pullForce = (mouse.radius - distance) / mouse.radius;
+              
+              p.x += forceX * pullForce * 1.5;
+              p.y += forceY * pullForce * 1.5;
+            }
+          }
+
+          // Draw the physical node
           ctx.beginPath();
-          ctx.arc(p.x, p.y, config.particleRadius, 0, Math.PI * 2);
-          ctx.fillStyle = config.particleColor;
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = config.colors[p.type];
           ctx.fill();
+          
+          // Draw subtle glow ring around Hubs
+          if (p.radius > 2) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius * 2.5, 0, Math.PI * 2);
+            const colorMatch = config.colors[p.type].match(/rgba\((\d+),\s*(\d+),\s*(\d+)/);
+            if (colorMatch) {
+                ctx.fillStyle = `rgba(${colorMatch[1]}, ${colorMatch[2]}, ${colorMatch[3]}, 0.15)`;
+                ctx.fill();
+            }
+          }
         }
 
         requestAnimationFrame(draw);
