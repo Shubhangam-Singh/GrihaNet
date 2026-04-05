@@ -98,6 +98,7 @@ class NetworkDevice(db.Model):
     is_blocked = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), default=1)
     last_seen = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    daily_limit_hours = db.Column(db.Float, nullable=True, default=None)
 
     bandwidth_logs = db.relationship("BandwidthLog", backref="device", lazy=True)
 
@@ -106,7 +107,7 @@ class NetworkDevice(db.Model):
             "id": self.id, "name": self.name, "ip": self.ip, "mac": self.mac,
             "type": self.device_type, "bw": self.bandwidth_used,
             "online": self.is_online, "wl": self.is_whitelisted,
-            "blocked": self.is_blocked,
+            "blocked": self.is_blocked, "daily_limit_hours": self.daily_limit_hours,
         }
 
 

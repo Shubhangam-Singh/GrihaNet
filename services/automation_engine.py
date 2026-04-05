@@ -102,12 +102,38 @@ def _fire_action(rule, app):
 
 def _run_engine(app):
     """Main engine loop — runs forever in background thread."""
-    from models import Automation
+    from models import Automation, Settings, NetworkDevice, Alert, db
+    last_parental_check = {}
+
     while True:
         time.sleep(INTERVAL)
         try:
             with app.app_context():
                 now = datetime.now(timezone.utc)
+                
+                # --- Parental Controls Polling ---
+                pc_settings = Settings.query.filter_by(key="parentalControls", value="true").all()
+                for pc in pc_settings:
+                    uid = pc.user_id
+                    last_check = last_parental_check.get(uid)
+                    if not last_check or (now - last_check).total_seconds() >= DEBOUNCE_SECONDS:
+                        last_parental_check[uid] = now
+                        devices = NetworkDevice.query.filter_by(user_id=uid, is_online=True).all()
+                        for d in devices:
+                            if d.daily_limit_hours and not d.is_blocked:
+                                est_hours = d.bandwidth_used * 0.7
+                                if est_hours > d.daily_limit_hours:
+                                    d.is_blocked = True
+                                    d.is_online = False
+                                    db.session.add(Alert(
+                                        alert_type="danger",
+                                        message=f"Parental Controls: {d.name} blocked — daily screen time limit reached.",
+                                        icon="🧒", module="Network", user_id=uid
+                                    ))
+                                    print(f"  🧒 Parental Controls: Blocked {d.name}")
+                        db.session.commit()
+
+                # --- Regular Automation Rules ---
                 rules = Automation.query.filter_by(enabled=True).all()
                 for rule in rules:
                     # Debounce: skip if fired recently

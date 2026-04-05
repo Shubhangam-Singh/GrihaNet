@@ -148,10 +148,106 @@ const MOTION_TYPES = [
 ];
 
 /* ─── COMPONENTS ─── */
-function Card({children,style,glow,onClick,className}){
-  const base="card"+(className?" "+className:"");
+function CustomCursor({ enabled }) {
+  const cursorRef = useRef(null);
+  useEffect(() => {
+    if (!enabled) return;
+    const handleMouseMove = e => {
+      if (!cursorRef.current) return;
+      cursorRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+      const isHover = e.target.closest('button, a, .card, .btn, .stat-card, input, select, .toggle');
+      if (isHover) cursorRef.current.classList.add('is-hover');
+      else cursorRef.current.classList.remove('is-hover');
+    };
+    const handleMouseDown = () => cursorRef.current?.classList.add('is-active');
+    const handleMouseUp = () => cursorRef.current?.classList.remove('is-active');
+    window.addEventListener('mousemove', handleMouseMove, {passive: true});
+    window.addEventListener('mousedown', handleMouseDown, {passive: true});
+    window.addEventListener('mouseup', handleMouseUp, {passive: true});
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [enabled]);
+  if (!enabled) return null;
+  const h = React.createElement;
+  return h("div", { ref: cursorRef, className: "grihanet-cursor-container" },
+    h("style", null, `
+      .atom-core { fill: #ffd700; transition: fill 0.2s ease-out; }
+      .atom-orbit { stroke: #ffb366; transition: stroke 0.2s ease-out; }
+      .grihanet-cursor-container.is-active .atom-core { fill: #00F0FF; }
+      .grihanet-cursor-container.is-active .atom-orbit { stroke: #4da6ff; }
+    `),
+    h("div", { className: "cursor-variant-default", style: { position: 'absolute', top: -4, left: -24 } },
+      h("svg", { width: "48", height: "48", viewBox: "0 0 48 48", fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { transformOrigin: '24px 4px', transform: 'scale(0.65) rotate(-35deg)' } },
+        h("defs", null,
+          h("linearGradient", { id: "metal", x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
+            h("stop", { offset: "0%", stopColor: "#b0c4de" }),
+            h("stop", { offset: "100%", stopColor: "#4a5d73" })
+          ),
+          h("filter", { id: "glow-blue", x: "-20%", y: "-20%", width: "140%", height: "140%" },
+            h("feGaussianBlur", { stdDeviation: "3", result: "blur" }),
+            h("feComposite", { in: "SourceGraphic", in2: "blur", operator: "over" })
+          )
+        ),
+        h("path", { d: "M24 4 L42 38 L24 30 L6 38 Z", fill: "rgba(11, 17, 32, 0.8)", stroke: "#4da6ff", strokeWidth: "2", filter: "url(#glow-blue)" }),
+        h("path", { d: "M24 10 L36 33 L24 27 L12 33 Z", fill: "url(#metal)" }),
+        h("path", { d: "M24 18 L20 25 L28 25 L28 28 L20 28", stroke: "#ffffff", strokeWidth: "1.5", fill: "none" })
+      )
+    ),
+    h("div", { className: "cursor-variant-hover", style: { position: 'absolute', top: -30, left: -30 } },
+      h("svg", { width: "60", height: "60", viewBox: "0 0 60 60", fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { transformOrigin: '30px 30px', transform: 'scale(0.65)' } },
+        h("defs", null,
+          h("filter", { id: "glow-atom", x: "-20%", y: "-20%", width: "140%", height: "140%" },
+            h("feGaussianBlur", { stdDeviation: "2", result: "blur" }),
+            h("feComposite", { in: "SourceGraphic", in2: "blur", operator: "over" })
+          )
+        ),
+        h("circle", { className: "atom-core", cx: "30", cy: "30", r: "4", filter: "url(#glow-atom)" },
+          h("animate", { attributeName: "r", values: "3;5;3", dur: "1.5s", repeatCount: "indefinite" })
+        ),
+        h("g", null,
+          h("ellipse", { className: "atom-orbit", cx: "30", cy: "30", rx: "22", ry: "8", strokeWidth: "1.5", strokeDasharray: "4 4", opacity: "0.8", fill: "none" }),
+          h("circle", { cx: "52", cy: "30", r: "2.5", fill: "#ffffff", filter: "url(#glow-atom)" }),
+          h("animateTransform", { attributeName: "transform", type: "rotate", from: "0 30 30", to: "360 30 30", dur: "3s", repeatCount: "indefinite" })
+        ),
+        h("g", null,
+          h("ellipse", { className: "atom-orbit", cx: "30", cy: "30", rx: "22", ry: "8", strokeWidth: "1.5", strokeDasharray: "4 4", opacity: "0.8", fill: "none" }),
+          h("circle", { cx: "52", cy: "30", r: "2.5", fill: "#ffffff", filter: "url(#glow-atom)" }),
+          h("animateTransform", { attributeName: "transform", type: "rotate", from: "60 30 30", to: "420 30 30", dur: "4s", repeatCount: "indefinite" })
+        ),
+        h("g", null,
+          h("ellipse", { className: "atom-orbit", cx: "30", cy: "30", rx: "22", ry: "8", strokeWidth: "1.5", strokeDasharray: "4 4", opacity: "0.8", fill: "none" }),
+          h("circle", { cx: "52", cy: "30", r: "2.5", fill: "#ffffff", filter: "url(#glow-atom)" }),
+          h("animateTransform", { attributeName: "transform", type: "rotate", from: "120 30 30", to: "-240 30 30", dur: "5s", repeatCount: "indefinite" })
+        )
+      )
+    )
+  );
+}
+
+function Card({children,style,glow,onClick,className,onMouseMove,onMouseLeave}){
+  const base="card tilt-card"+(className?" "+className:"");
+  const handleMouseMove = e => {
+    if(onMouseMove) onMouseMove(e);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const rotateX = ((y - rect.height / 2) / (rect.height / 2)) * -1.5;
+    const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 1.5;
+    e.currentTarget.style.setProperty('--rx', `${rotateX}deg`);
+    e.currentTarget.style.setProperty('--ry', `${rotateY}deg`);
+  };
+  const handleMouseLeave = e => {
+    if(onMouseLeave) onMouseLeave(e);
+    e.currentTarget.style.setProperty('--rx', '0deg');
+    e.currentTarget.style.setProperty('--ry', '0deg');
+  };
   return React.createElement("div",{
     onClick,className:base,
+    onMouseMove: handleMouseMove,
+    onMouseLeave: handleMouseLeave,
     style:{
       ...(glow&&{borderColor:T.accent+"66",boxShadow:`0 0 28px ${T.accent}14`}),
       ...(onClick&&{cursor:"pointer"}),
@@ -1261,16 +1357,44 @@ function GrihaNet(){
   const [selectedRoom,setSelectedRoom]=useState(null); // null = all rooms shown
   const [showAddAppliance,setShowAddAppliance]=useState(false);
   const [newAppl,setNewAppl]=useState({name:"",icon:"🔌",watts:"100",room:"Bedroom"});
+  const [screentimeEdits,setScreentimeEdits]=useState({});
   const [themeVersion,setThemeVersion]=useState(0);
   const [settings,setSettings]=useState({
     darkMode:true,autoRefresh:true,pushNotifications:true,soundAlerts:false,simulationMode:true,
     bgAnimations:localStorage.getItem('grihanet_bgAnimations')!=='false',
     customCursor:localStorage.getItem('grihanet_customCursor')!=='false',
+    premiumAnimations:localStorage.getItem('grihanet_premiumAnimations')!=='false',
     rate:6.5,highUsageThreshold:4.5,runtimeAlert:2,monthlyBudget:2500,
     autoBlockUnknown:false,bandwidthAlert:true,bandwidthThreshold:10,parentalControls:false,
     motionSensitivity:"High",alertHoursStart:"23:00",alertHoursEnd:"06:00",
     snapshotOnMotion:true,recordClips:false,
   });
+
+  /* ─── Premium Animations & Liquid Ripple Engine ─── */
+  useEffect(()=>{
+    document.body.classList.toggle("premium-anims", settings.premiumAnimations);
+    if(!settings.premiumAnimations) return;
+    const handleRipple = e => {
+      const target = e.target.closest('.btn, .card, button, .toggle');
+      if(!target) return;
+      const rect = target.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      const size = Math.max(rect.width, rect.height);
+      ripple.style.width = ripple.style.height = `${size}px`;
+      ripple.style.left = `${e.clientX - rect.left - size/2}px`;
+      ripple.style.top = `${e.clientY - rect.top - size/2}px`;
+      const wrapper = document.createElement('span');
+      wrapper.className = 'ripple-wrapper';
+      wrapper.style.position = 'absolute';
+      wrapper.style.inset = '0';
+      wrapper.appendChild(ripple);
+      target.appendChild(wrapper);
+      setTimeout(() => wrapper.remove(), 600);
+    };
+    document.addEventListener('mousedown', handleRipple);
+    return () => document.removeEventListener('mousedown', handleRipple);
+  },[settings.premiumAnimations]);
 
   /* ─── Apply theme whenever darkMode setting changes ─── */
   useEffect(()=>{
@@ -1444,7 +1568,23 @@ function GrihaNet(){
       try{localStorage.setItem('grihanet_customCursor',String(val));}catch(e){}
       if(window.setCustomCursor) window.setCustomCursor(val);
     }
+    if(key==="premiumAnimations"){
+      try{localStorage.setItem('grihanet_premiumAnimations',String(val));}catch(e){}
+    }
     addToast("⚙️","Settings Updated",key.replace(/([A-Z])/g," $1")+" changed",T.accent);
+  };
+  const saveScreentimeLimits=async()=>{
+    let saved=0;
+    for(const [did,val] of Object.entries(screentimeEdits)){
+      await api.put(`/network/devices/${did}/screentime`,{daily_limit_hours:val});
+      saved++;
+    }
+    if(saved>0){
+      addToast("✅","Limits Saved",`Updated limits for ${saved} devices`,T.success);
+      const dRes=await api.get("/network/devices");
+      if(dRes) setDevices(dRes);
+      setScreentimeEdits({});
+    }
   };
   const addAppliance=async()=>{
     if(!newAppl.name.trim()||!newAppl.room.trim())return;
@@ -1512,6 +1652,7 @@ function GrihaNet(){
 
   return h("div",{style:{minHeight:"100vh",background:"transparent",color:"var(--text)",fontFamily:"'DM Sans',sans-serif"}},
     h(Toast,{toasts,onDismiss:dismissToast}),
+    h(CustomCursor, {enabled: settings.customCursor}),
 
     /* ═══ HEADER — fixed frosted glass bar ═══ */
     h("header",{
@@ -1957,7 +2098,7 @@ function GrihaNet(){
               className:"btn btn-ghost",style:{fontSize:12,padding:"6px 14px"}},"+ Add")
           ),
           h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:12}},
-            appliances.map(a=>h("div",{key:a.id,
+            appliances.map(a=>h(Card,{key:a.id, className: a.on ? "anim-glow-border" : "",
               "data-tooltip":a.on?"ON — click toggle to turn off":"OFF — click toggle to turn on",
               style:{
                 background:"var(--bg-card)",
@@ -2091,9 +2232,15 @@ function GrihaNet(){
             /* Icon circle color */
             const iconBg={phone:"rgba(59,130,246,0.15)",laptop:"rgba(139,92,246,0.15)",tv:"rgba(0,229,160,0.12)",gaming:"rgba(245,158,11,0.15)",unknown:"rgba(239,68,68,0.15)"}[d.type]||"var(--bg-input)";
             const iconColor={phone:"var(--blue)",laptop:"var(--purple)",tv:"var(--teal)",gaming:"var(--warn)",unknown:"var(--danger)"}[d.type]||"var(--text-muted)";
-            const bwColor=d.bw>settings.bandwidthThreshold?"var(--warn)":d.bw>5?"var(--blue)":"var(--success)";
+            
+            // Screen time logic
+            const estHours = (d.bw * 0.7).toFixed(1);
+            const limit = d.daily_limit_hours;
+            const limitExceeded = settings.parentalControls && limit && parseFloat(estHours) > limit;
+            const bwColor=limitExceeded?"var(--danger)":d.bw>settings.bandwidthThreshold?"var(--warn)":d.bw>5?"var(--blue)":"var(--success)";
+
             return h("div",{key:d.id,style:{
-              display:"flex",justifyContent:"space-between",alignItems:"center",
+              display:"flex",flexDirection:"column",justifyContent:"center",
               padding:"12px 10px",borderRadius:"var(--radius-sm)",
               marginBottom:i<arr.length-1?6:0,
               background:!d.wl?"rgba(239,68,68,0.04)":d.blocked?"rgba(239,68,68,0.04)":"transparent",
@@ -2101,36 +2248,49 @@ function GrihaNet(){
               opacity:d.online?1:.5,
               transition:"background .15s",
             }},
-              /* Left: icon circle + name/IP */
-              h("div",{style:{display:"flex",alignItems:"center",gap:12,flex:1,minWidth:0}},
-                h("div",{style:{
-                  width:40,height:40,borderRadius:"50%",flexShrink:0,
-                  background:iconBg,display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:18,color:iconColor
-                }},devIcons[d.type]),
-                h("div",{style:{minWidth:0}},
-                  h("div",{style:{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}},
-                    h("span",{style:{fontSize:13,fontWeight:700,color:"var(--text)"}},d.name),
-                    !d.wl&&h("span",{className:"badge badge-danger"},"\u26A0 Unknown"),
-                    d.blocked&&h("span",{className:"badge badge-danger"},"Blocked")
-                  ),
-                  h("div",{style:{fontSize:11,color:"var(--text-dim)",fontFamily:"'IBM Plex Mono',monospace",marginTop:2}},d.ip)
+              h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                /* Left: icon circle + name/IP */
+                h("div",{style:{display:"flex",alignItems:"center",gap:12,flex:1,minWidth:0}},
+                  h("div",{style:{
+                    width:40,height:40,borderRadius:"50%",flexShrink:0,
+                    background:iconBg,display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:18,color:iconColor
+                  }},devIcons[d.type]),
+                  h("div",{style:{minWidth:0}},
+                    h("div",{style:{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}},
+                      h("span",{style:{fontSize:13,fontWeight:700,color:"var(--text)"}},d.name),
+                      !d.wl&&h("span",{className:"badge badge-danger"},"\u26A0 Unknown"),
+                      limitExceeded&&h("span",{className:"badge badge-danger",style:{animation:"pulse 2s infinite"}},"LIMIT REACHED"),
+                      d.blocked&&!limitExceeded&&h("span",{className:"badge badge-danger"},"Blocked")
+                    ),
+                    h("div",{style:{fontSize:11,color:"var(--text-dim)",fontFamily:"'IBM Plex Mono',monospace",marginTop:2}},d.ip)
+                  )
+                ),
+                /* Right: bw pill + status + block btn */
+                h("div",{style:{display:"flex",alignItems:"center",gap:8,flexShrink:0}},
+                  d.online&&h("span",{style:{
+                    fontSize:11,fontWeight:700,fontFamily:"'IBM Plex Mono',monospace",
+                    padding:"2px 8px",borderRadius:20,
+                    background:bwColor+"15",color:bwColor,border:`1px solid ${bwColor}30`
+                  }},d.bw+" GB"),
+                  h("span",{className:`badge ${d.blocked?"badge-danger":d.online?"badge-success":"badge-warn"}`},
+                    d.blocked?"Blocked":d.online?"Online":"Offline"),
+                  h("button",{"data-tooltip":d.blocked?"Allow internet access":"Block from internet",
+                    onClick:()=>toggleDeviceBlock(d.id),
+                    className:`btn ${d.blocked?"btn-ghost":"btn-danger"}`,
+                    style:{fontSize:11,padding:"4px 10px",...(limitExceeded&&!d.blocked?{animation:"pulse 1.5s infinite",boxShadow:"0 0 10px rgba(239,68,68,0.6)"}:{})}},
+                    d.blocked?"Unblock":"Block")
                 )
               ),
-              /* Right: bw pill + status + block btn */
-              h("div",{style:{display:"flex",alignItems:"center",gap:8,flexShrink:0}},
-                d.online&&h("span",{style:{
-                  fontSize:11,fontWeight:700,fontFamily:"'IBM Plex Mono',monospace",
-                  padding:"2px 8px",borderRadius:20,
-                  background:bwColor+"15",color:bwColor,border:`1px solid ${bwColor}30`
-                }},d.bw+" GB"),
-                h("span",{className:`badge ${d.blocked?"badge-danger":d.online?"badge-success":"badge-warn"}`},
-                  d.blocked?"Blocked":d.online?"Online":"Offline"),
-                h("button",{"data-tooltip":d.blocked?"Allow internet access":"Block from internet",
-                  onClick:()=>toggleDeviceBlock(d.id),
-                  className:`btn ${d.blocked?"btn-ghost":"btn-danger"}`,
-                  style:{fontSize:11,padding:"4px 10px"}},
-                  d.blocked?"Unblock":"Block")
+              /* Progress bar */
+              settings.parentalControls&&h("div",{style:{marginTop:12,paddingLeft:52}},
+                h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:10,color:"var(--text-muted)",marginBottom:4,fontWeight:600}},
+                  h("span",null,"Screen Time"),
+                  h("span",null,`${estHours}h / ${limit?limit+'h':'?'}`)
+                ),
+                h("div",{style:{height:4,background:"var(--bg-input)",borderRadius:2,overflow:"hidden"}},
+                  h("div",{style:{height:"100%",background:limitExceeded?"var(--danger)":"var(--teal)",width:`${Math.min(100,(estHours/(limit||4))*100)}%`,transition:"width 0.3s"}})
+                )
               )
             );
           })
@@ -2446,7 +2606,7 @@ function GrihaNet(){
             h("div",{style:{fontSize:11,color:"var(--text-muted)",marginBottom:12}},"Generate a comprehensive PDF summary of your home's usage and status."),
             h("button",{onClick:generatePDF,style:{padding:"10px 18px",borderRadius:8,background:T.accent,color:"#000",border:"none",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:8}},h("span",null,"📄"),"Download PDF Report")
           ),
-          [{key:"darkMode",label:"Dark Mode",desc:"Use dark theme across dashboard"},{key:"bgAnimations",label:"Background Animations",desc:"Interactive canvas and motion effects"},{key:"customCursor",label:"Custom Cursor",desc:"Interactive designer mouse pointer"},{key:"autoRefresh",label:"Auto-refresh Data",desc:"Refresh stats every 2.5 seconds"},{key:"pushNotifications",label:"Push Notifications",desc:"Toast notifications for critical alerts"},{key:"soundAlerts",label:"Sound Alerts",desc:"Play sound on high-severity alerts"},{key:"simulationMode",label:"Simulation Mode",desc:"Generate random motion events for demo"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:"var(--text-muted)"}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))),
+          [{key:"darkMode",label:"Dark Mode",desc:"Use dark theme across dashboard"},{key:"bgAnimations",label:"Background Animations",desc:"Interactive canvas and motion effects"},{key:"customCursor",label:"Custom Cursor",desc:"Interactive designer mouse pointer"},{key:"premiumAnimations",label:"Premium Animations",desc:"3D tilts, ripples, and dynamic layouts"},{key:"autoRefresh",label:"Auto-refresh Data",desc:"Refresh stats every 2.5 seconds"},{key:"pushNotifications",label:"Push Notifications",desc:"Toast notifications for critical alerts"},{key:"soundAlerts",label:"Sound Alerts",desc:"Play sound on high-severity alerts"},{key:"simulationMode",label:"Simulation Mode",desc:"Generate random motion events for demo"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:"var(--text-muted)"}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))),
 
         settingsTab==="power"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"Power Settings"),
           [{key:"rate",label:"Electricity Rate (₹/kWh)",step:.5,min:1,max:20},{key:"highUsageThreshold",label:"High Usage Alert (kW)",step:.5,min:1,max:10},{key:"runtimeAlert",label:"Runtime Alert (hours)",step:.5,min:.5,max:8},{key:"monthlyBudget",label:"Monthly Budget (₹)",step:100,min:500,max:10000}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},
@@ -2458,8 +2618,23 @@ function GrihaNet(){
             )
           ))),
 
-        settingsTab==="network"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"Network Settings"),
-          [{key:"autoBlockUnknown",label:"Auto-block Unknown Devices",desc:"Block unrecognized MAC addresses"},{key:"bandwidthAlert",label:"Bandwidth Alert",desc:`Alert when device exceeds ${settings.bandwidthThreshold} GB/day`},{key:"parentalControls",label:"Parental Controls",desc:"Time-based internet restrictions"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:"var(--text-muted)"}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])})))),
+        settingsTab==="network"&&h(Card,null,
+          h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"Network Settings"),
+          [{key:"autoBlockUnknown",label:"Auto-block Unknown Devices",desc:"Block unrecognized MAC addresses"},{key:"bandwidthAlert",label:"Bandwidth Alert",desc:`Alert when device exceeds ${settings.bandwidthThreshold} GB/day`},{key:"parentalControls",label:"Parental Controls",desc:"Time-based internet restrictions"}].map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},h("div",null,h("div",{style:{fontSize:13,fontWeight:500}},s.label),h("div",{style:{fontSize:11,color:"var(--text-muted)"}},s.desc)),h(Toggle,{on:settings[s.key],onToggle:()=>updateSetting(s.key,!settings[s.key])}))),
+          settings.parentalControls && h("div", {style:{marginTop: 10, paddingTop: 16, borderTop: "1px solid rgba(30,41,59,0.2)"}},
+            h("div",{style:{fontSize:13,fontWeight:600,marginBottom:12,color:"var(--teal)"}},"Screen Time Limits per Device"),
+            devices.map(d => h("div", {key: d.id, style:{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0"}},
+              h("div", {style:{fontSize:12, color:"var(--text)"}}, d.name),
+              h("input", {
+                type: "number", step: "0.1", min: "0", max: "24", placeholder: "Unrestricted",
+                className: "inp", style: {width: 100, padding: "6px 10px", fontSize: 11},
+                value: screentimeEdits[d.id] !== undefined ? screentimeEdits[d.id] : (d.daily_limit_hours || ""),
+                onChange: e => setScreentimeEdits(s => ({...s, [d.id]: e.target.value}))
+              })
+            )),
+            h("button", {onClick: saveScreentimeLimits, style:{marginTop: 14, padding: "8px 16px", background: "var(--teal)", color: "#000", border: "none", borderRadius: 6, fontWeight: 600, fontSize: 11, cursor: "pointer"}}, "Save Limits")
+          )
+        ),
 
         settingsTab==="security"&&h(Card,null,h("div",{style:{fontSize:14,fontWeight:600,marginBottom:16}},"Security Settings"),
           h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderBottom:"1px solid rgba(30,41,59,0.2)"}},h("div",{style:{fontSize:13,fontWeight:500}},"Motion Sensitivity"),h("div",{style:{display:"flex",gap:6}},["Low","Medium","High"].map(l=>h("button",{key:l,onClick:()=>updateSetting("motionSensitivity",l),style:{padding:"6px 14px",borderRadius:8,border:`1px solid ${settings.motionSensitivity===l?T.accent+"44":T.border}`,background:settings.motionSensitivity===l?T.accentDim:T.surface,color:settings.motionSensitivity===l?T.accent:T.textSec,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans'"}},l)))),
