@@ -7,6 +7,8 @@ from services.simulation import (
     generate_power_history_24h, generate_weekly_data, get_energy_recommendations
 )
 
+from services.mqtt_service import send_appliance_state
+
 power_bp = Blueprint("power", __name__)
 
 
@@ -56,6 +58,12 @@ def toggle_appliance(aid):
     uid = get_jwt_identity()
     appliance = Appliance.query.filter_by(id=aid, user_id=uid).first_or_404()
     appliance.is_on = not appliance.is_on
+
+    # ✅ ONLY ONE MQTT CALL (guarded)
+    if appliance.gpio_pin is not None:
+        send_appliance_state(appliance)
+    else:
+        print(f"[INFO] {appliance.name} is virtual (no GPIO)")
 
     # Create an alert: success when turning ON, info when turning OFF
     status_label = 'ON' if appliance.is_on else 'OFF'

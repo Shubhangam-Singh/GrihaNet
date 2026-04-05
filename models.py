@@ -55,6 +55,7 @@ class Appliance(db.Model):
     is_on = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), default=1)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    gpio_pin = db.Column(db.Integer, nullable=True)
 
     readings = db.relationship("PowerReading", backref="appliance", lazy=True)
 
