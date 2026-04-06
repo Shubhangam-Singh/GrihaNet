@@ -2165,12 +2165,33 @@ function GrihaNet(){
                 h("span",{style:{fontSize:12,color:"var(--text-muted)"}}," kW")
               ),
               h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}},
-                h("span",{className:"badge "+(parseFloat(liveKw)<=settings.highUsageThreshold?"badge-success":"badge-danger")},parseFloat(liveKw)<=settings.highUsageThreshold?"Normal":"High"),
-                h("span", {style:{fontSize: 11, color: "var(--text-dim)", fontWeight: 600}}, "230V • " + (liveWatts / 230).toFixed(2) + "A")
+                h("span",{className:"badge "+(parseFloat(liveKw)<=settings.highUsageThreshold?"badge-success":"badge-danger")},parseFloat(liveKw)<=settings.highUsageThreshold?"Normal":"High")
               )
             )
           ),
-          h("div",{className:"stat-card fadeUp d2","data-tooltip":"Today's electricity cost"},
+          h("div",{className:"stat-card fadeUp d2","data-tooltip":"Live Total Current Draw"},
+            h("div",{style:{position:"absolute",top:-20,right:-20,width:70,height:70,borderRadius:"50%",background:"var(--teal-glow)",pointerEvents:"none"}}),
+            h("div",{style:{position:"relative"}},
+               h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:8}},h("span",{style:{fontSize:20}},"🔌"),h("span",{className:"section-title"},"Live Current")),
+               h("div",{style:{display:"flex",alignItems:"baseline",gap:2,marginBottom:6}},
+                 h("span",{style:{fontSize:28,fontWeight:700,fontFamily:"'IBM Plex Mono'",color:"var(--teal)",lineHeight:1}},(liveWatts/230).toFixed(2)),
+                 h("span",{style:{fontSize:12,color:"var(--text-muted)", marginLeft: 5}}, "A")
+               ),
+               h("span",{style:{fontSize:11,color:"var(--text-dim)"}},"Calculated Total")
+            )
+          ),
+          h("div",{className:"stat-card fadeUp d3","data-tooltip":"Grid Voltage"},
+            h("div",{style:{position:"absolute",top:-20,right:-20,width:70,height:70,borderRadius:"50%",background:"rgba(59, 130, 246, 0.12)",pointerEvents:"none"}}),
+            h("div",{style:{position:"relative"}},
+               h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:8}},h("span",{style:{fontSize:20}},"⚡"),h("span",{className:"section-title"},"Grid Voltage")),
+               h("div",{style:{display:"flex",alignItems:"baseline",gap:2,marginBottom:6}},
+                 h("span",{style:{fontSize:28,fontWeight:700,fontFamily:"'IBM Plex Mono'",color:"var(--blue)",lineHeight:1}},"230"),
+                 h("span",{style:{fontSize:12,color:"var(--text-muted)", marginLeft: 5}}, "V")
+               ),
+               h("span",{style:{fontSize:11,color:"var(--text-dim)"}},"Standard Supply")
+            )
+          ),
+          h("div",{className:"stat-card fadeUp d4","data-tooltip":"Today's electricity cost"},
             h("div",{style:{position:"absolute",top:-20,right:-20,width:70,height:70,borderRadius:"50%",background:"var(--teal-glow)",pointerEvents:"none"}}),
             h("div",{style:{position:"relative"}},
               h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:8}},h("span",{style:{fontSize:20}},"💰"),h("span",{className:"section-title"},"Today's Cost")),
@@ -2180,7 +2201,7 @@ function GrihaNet(){
               h("span",{style:{fontSize:11,color:"var(--text-dim)"}},"₹"+settings.rate+"/kWh")
             )
           ),
-          h("div",{className:"stat-card fadeUp d3","data-tooltip":"Estimated monthly bill"},
+          h("div",{className:"stat-card fadeUp d5","data-tooltip":"Estimated monthly bill"},
             h("div",{style:{position:"absolute",top:-20,right:-20,width:70,height:70,borderRadius:"50%",background:(parseInt(todayCost)*30>settings.monthlyBudget?"var(--danger)":"var(--blue)")+"12",pointerEvents:"none"}}),
             h("div",{style:{position:"relative"}},
               h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:8}},h("span",{style:{fontSize:20}},"📅"),h("span",{className:"section-title"},"Monthly Est.")),
@@ -2190,7 +2211,7 @@ function GrihaNet(){
               h("span",{style:{fontSize:11,color:"var(--text-dim)"}},"₹"+settings.monthlyBudget.toLocaleString()+" budget")
             )
           ),
-          h("div",{className:"stat-card fadeUp d4","data-tooltip":"Peak power spike today"},
+          h("div",{className:"stat-card fadeUp d6","data-tooltip":"Peak power spike today"},
             h("div",{style:{position:"absolute",top:-20,right:-20,width:70,height:70,borderRadius:"50%",background:"rgba(239,68,68,0.08)",pointerEvents:"none"}}),
             h("div",{style:{position:"relative"}},
               h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:8}},h("span",{style:{fontSize:20}},"📈"),h("span",{className:"section-title"},"Peak Today")),
