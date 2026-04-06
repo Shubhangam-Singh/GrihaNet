@@ -295,7 +295,7 @@ function Badge({text,color}){
 }
 function Toggle({on,onToggle,disabled}){
   return React.createElement("button",{
-    onClick:disabled?undefined:onToggle,
+    onClick: e => { e.stopPropagation(); if (!disabled && onToggle) onToggle(e); },
     className:"toggle"+(on?" on":""),
     style:{opacity:disabled?.45:1,cursor:disabled?"not-allowed":"pointer"},
     "aria-label":on?"Turn off":"Turn on"
@@ -2164,7 +2164,10 @@ function GrihaNet(){
                 h("span",{style:{fontSize:28,fontWeight:700,fontFamily:"'IBM Plex Mono'",color:parseFloat(liveKw)>settings.highUsageThreshold?"var(--danger)":"var(--warn)",lineHeight:1}},liveKw),
                 h("span",{style:{fontSize:12,color:"var(--text-muted)"}}," kW")
               ),
-              h("span",{className:"badge "+(parseFloat(liveKw)<=settings.highUsageThreshold?"badge-success":"badge-danger")},parseFloat(liveKw)<=settings.highUsageThreshold?"Normal":"High")
+              h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}},
+                h("span",{className:"badge "+(parseFloat(liveKw)<=settings.highUsageThreshold?"badge-success":"badge-danger")},parseFloat(liveKw)<=settings.highUsageThreshold?"Normal":"High"),
+                h("span", {style:{fontSize: 11, color: "var(--text-dim)", fontWeight: 600}}, "230V • " + (liveWatts / 230).toFixed(2) + "A")
+              )
             )
           ),
           h("div",{className:"stat-card fadeUp d2","data-tooltip":"Today's electricity cost"},
@@ -2310,7 +2313,9 @@ function GrihaNet(){
                 boxShadow:a.on?"0 0 18px rgba(0,229,160,0.12)":"none",
                 opacity:togglingIds.has(a.id)?.55:1,
                 display:"flex",flexDirection:"column",gap:10,
-              }},
+                cursor: togglingIds.has(a.id) ? "wait" : "pointer",
+              },
+              onClick: () => !togglingIds.has(a.id) && toggleAppliance(a.id)},
               /* Top row: icon + name + room badge + delete */
               h("div",{style:{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}},
                 h("div",{style:{display:"flex",alignItems:"center",gap:10}},
@@ -2325,7 +2330,7 @@ function GrihaNet(){
                     h("span",{className:"badge badge-blue",style:{marginTop:4,display:"inline-flex"}},a.room)
                   )
                 ),
-                h("button",{onClick:()=>deleteAppliance(a.id),title:"Remove",style:{
+                h("button",{onClick:e=>{e.stopPropagation();deleteAppliance(a.id);},title:"Remove",style:{
                   background:"none",border:"none",color:"var(--text-dim)",fontSize:18,
                   cursor:"pointer",padding:"2px 4px",lineHeight:1,opacity:.4,transition:"opacity .15s"},
                   onMouseEnter:e=>e.currentTarget.style.opacity="1",
