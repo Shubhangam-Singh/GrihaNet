@@ -144,6 +144,27 @@ grihanet/
 - Network: Auto-block, bandwidth alerts, parental controls
 - Security: Motion sensitivity, alert hours, snapshots
 
+### 🤖 Automations & Rules
+- Modular IF-THEN conditional automation engine
+- Triggers: Power thresholds, Time delays, Camera motion, Appliance states
+- Actions: Toggle appliances automatically or push custom alert notifications
+
+### 🧭 Interactive Onboarding
+- Guided step-by-step UI walkthrough tailored for first-time logins
+- Dynamic viewport spotlight accurately highlighting targeted DOM nodes
+- Automatic cross-tab synchronization during step navigation
+- Re-trigger functionality built seamlessly into General Settings
+
+### 💬 AI Assistant & Chatbot
+- Context-aware floating chatbot widget for holistic household diagnostics
+- Extends queries against live sensor datasets (active power metrics, unread alerts)
+- Simulated LLM-based parsing with graceful fallbacks
+
+### ✨ Custom UI Styling
+- Hardware-accelerated custom dynamic atomic cursor with hover states
+- Progressive Web App (PWA) cache-busting capabilities
+- Native CSS variable-driven theming architecture (Dark/Light Mode toggles)
+
 ---
 
 ## Database Schema
