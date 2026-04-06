@@ -179,25 +179,25 @@ function CustomCursor({ enabled }) {
   const h = React.createElement;
   const content = h("div", { ref: cursorRef, className: "grihanet-cursor-container" },
     h("style", null, `
-      .atom-core { fill: #ffd700; transition: fill 0.2s ease-out; }
-      .atom-orbit { stroke: #ffb366; transition: stroke 0.2s ease-out; }
-      .grihanet-cursor-container.is-active .atom-core { fill: #00F0FF; }
-      .grihanet-cursor-container.is-active .atom-orbit { stroke: #4da6ff; }
+      .atom-core { fill: #ff7043; transition: fill 0.2s ease-out; }
+      .atom-orbit { stroke: #ffab91; transition: stroke 0.2s ease-out; }
+      .grihanet-cursor-container.is-active .atom-core { fill: #ff3d00; }
+      .grihanet-cursor-container.is-active .atom-orbit { stroke: #ff5722; }
     `),
     h("div", { className: "cursor-variant-default", style: { position: 'absolute', top: -4, left: -24 } },
       h("svg", { width: "48", height: "48", viewBox: "0 0 48 48", fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { transformOrigin: '24px 4px', transform: 'scale(0.65) rotate(-35deg)' } },
         h("defs", null,
-          h("linearGradient", { id: "metal", x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
-            h("stop", { offset: "0%", stopColor: "#b0c4de" }),
-            h("stop", { offset: "100%", stopColor: "#4a5d73" })
+          h("linearGradient", { id: "metal-warm", x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
+            h("stop", { offset: "0%", stopColor: "#ffccb3" }),
+            h("stop", { offset: "100%", stopColor: "#804040" })
           ),
-          h("filter", { id: "glow-blue", x: "-20%", y: "-20%", width: "140%", height: "140%" },
+          h("filter", { id: "glow-orange", x: "-20%", y: "-20%", width: "140%", height: "140%" },
             h("feGaussianBlur", { stdDeviation: "3", result: "blur" }),
             h("feComposite", { in: "SourceGraphic", in2: "blur", operator: "over" })
           )
         ),
-        h("path", { d: "M24 4 L42 38 L24 30 L6 38 Z", fill: "rgba(11, 17, 32, 0.8)", stroke: "#4da6ff", strokeWidth: "2", filter: "url(#glow-blue)" }),
-        h("path", { d: "M24 10 L36 33 L24 27 L12 33 Z", fill: "url(#metal)" }),
+        h("path", { d: "M24 4 L42 38 L24 30 L6 38 Z", fill: "rgba(42, 11, 11, 0.85)", stroke: "#ff5722", strokeWidth: "2", filter: "url(#glow-orange)" }),
+        h("path", { d: "M24 10 L36 33 L24 27 L12 33 Z", fill: "url(#metal-warm)" }),
         h("path", { d: "M24 18 L20 25 L28 25 L28 28 L20 28", stroke: "#ffffff", strokeWidth: "1.5", fill: "none" })
       )
     ),
