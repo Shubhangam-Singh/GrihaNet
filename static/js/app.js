@@ -179,10 +179,10 @@ function CustomCursor({ enabled }) {
   const h = React.createElement;
   const content = h("div", { ref: cursorRef, className: "grihanet-cursor-container" },
     h("style", null, `
-      .atom-core { fill: #ff7043; transition: fill 0.2s ease-out; }
-      .atom-orbit { stroke: #ffab91; transition: stroke 0.2s ease-out; }
-      .grihanet-cursor-container.is-active .atom-core { fill: #ff3d00; }
-      .grihanet-cursor-container.is-active .atom-orbit { stroke: #ff5722; }
+      .atom-core { fill: #E64A19; transition: fill 0.2s ease-out; }
+      .atom-orbit { stroke: #D84315; transition: stroke 0.2s ease-out; }
+      .grihanet-cursor-container.is-active .atom-core { fill: #D50000; }
+      .grihanet-cursor-container.is-active .atom-orbit { stroke: #FF3D00; }
     `),
     h("div", { className: "cursor-variant-default", style: { position: 'absolute', top: -4, left: -24 } },
       h("svg", { width: "48", height: "48", viewBox: "0 0 48 48", fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { transformOrigin: '24px 4px', transform: 'scale(0.65) rotate(-35deg)' } },
@@ -213,18 +213,18 @@ function CustomCursor({ enabled }) {
           h("animate", { attributeName: "r", values: "3;5;3", dur: "1.5s", repeatCount: "indefinite" })
         ),
         h("g", null,
-          h("ellipse", { className: "atom-orbit", cx: "30", cy: "30", rx: "22", ry: "8", strokeWidth: "1.5", strokeDasharray: "4 4", opacity: "0.8", fill: "none" }),
-          h("circle", { cx: "52", cy: "30", r: "2.5", fill: "#ffffff", filter: "url(#glow-atom)" }),
+          h("ellipse", { className: "atom-orbit", cx: "30", cy: "30", rx: "22", ry: "8", strokeWidth: "2", strokeDasharray: "6 4", fill: "none" }),
+          h("circle", { cx: "52", cy: "30", r: "3", fill: "#FF3D00", filter: "url(#glow-atom)" }),
           h("animateTransform", { attributeName: "transform", type: "rotate", from: "0 30 30", to: "360 30 30", dur: "3s", repeatCount: "indefinite" })
         ),
         h("g", null,
-          h("ellipse", { className: "atom-orbit", cx: "30", cy: "30", rx: "22", ry: "8", strokeWidth: "1.5", strokeDasharray: "4 4", opacity: "0.8", fill: "none" }),
-          h("circle", { cx: "52", cy: "30", r: "2.5", fill: "#ffffff", filter: "url(#glow-atom)" }),
+          h("ellipse", { className: "atom-orbit", cx: "30", cy: "30", rx: "22", ry: "8", strokeWidth: "2", strokeDasharray: "6 4", fill: "none" }),
+          h("circle", { cx: "52", cy: "30", r: "3", fill: "#FF3D00", filter: "url(#glow-atom)" }),
           h("animateTransform", { attributeName: "transform", type: "rotate", from: "60 30 30", to: "420 30 30", dur: "4s", repeatCount: "indefinite" })
         ),
         h("g", null,
-          h("ellipse", { className: "atom-orbit", cx: "30", cy: "30", rx: "22", ry: "8", strokeWidth: "1.5", strokeDasharray: "4 4", opacity: "0.8", fill: "none" }),
-          h("circle", { cx: "52", cy: "30", r: "2.5", fill: "#ffffff", filter: "url(#glow-atom)" }),
+          h("ellipse", { className: "atom-orbit", cx: "30", cy: "30", rx: "22", ry: "8", strokeWidth: "2", strokeDasharray: "6 4", fill: "none" }),
+          h("circle", { cx: "52", cy: "30", r: "3", fill: "#FF3D00", filter: "url(#glow-atom)" }),
           h("animateTransform", { attributeName: "transform", type: "rotate", from: "120 30 30", to: "-240 30 30", dur: "5s", repeatCount: "indefinite" })
         )
       )

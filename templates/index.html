@@ -183,7 +183,8 @@
     }
 
     /* ── CUSTOM INTERACTIVE CURSOR COMPONENT ── */
-    body.custom-cursor-active, body.custom-cursor-active * { 
+    html.custom-cursor-active, body.custom-cursor-active, 
+    .custom-cursor-active * { 
       cursor: none !important; 
     }
     .grihanet-cursor-container {
@@ -669,11 +670,19 @@
       };
 
       let useCustomCursor = localStorage.getItem('grihanet_customCursor') !== 'false';
-      if(useCustomCursor) document.body.classList.add('custom-cursor-active');
+      if(useCustomCursor) {
+        document.body.classList.add('custom-cursor-active');
+        document.documentElement.classList.add('custom-cursor-active');
+      }
       window.setCustomCursor = (val) => {
         useCustomCursor = val;
-        if(val) document.body.classList.add('custom-cursor-active');
-        else document.body.classList.remove('custom-cursor-active');
+        if(val) {
+          document.body.classList.add('custom-cursor-active');
+          document.documentElement.classList.add('custom-cursor-active');
+        } else {
+          document.body.classList.remove('custom-cursor-active');
+          document.documentElement.classList.remove('custom-cursor-active');
+        }
       };
 
       // Mouse tracking
@@ -830,7 +839,7 @@
   </script>
   <div id="root"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script type="text/javascript" src="/static/js/app.js?v=47"></script>
+  <script type="text/javascript" src="/static/js/app.js?v=48"></script>
   <script>
     // Unregister stale service workers and clear caches to prevent black screen
     if ('serviceWorker' in navigator) {
