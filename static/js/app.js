@@ -227,7 +227,7 @@ function CustomCursor({ enabled }) {
   );
 }
 
-function Card({children,style,glow,onClick,className,onMouseMove,onMouseLeave}){
+function Card({children,style,glow,onClick,className,onMouseMove,onMouseLeave,id}){
   const base="card tilt-card"+(className?" "+className:"");
   const handleMouseMove = e => {
     if(onMouseMove) onMouseMove(e);
@@ -245,7 +245,7 @@ function Card({children,style,glow,onClick,className,onMouseMove,onMouseLeave}){
     e.currentTarget.style.setProperty('--ry', '0deg');
   };
   return React.createElement("div",{
-    onClick,className:base,
+    id,onClick,className:base,
     onMouseMove: handleMouseMove,
     onMouseLeave: handleMouseLeave,
     style:{
@@ -1088,7 +1088,7 @@ function ChatWidget({user, appliances, devices, cameras, alerts}){
 
   return h(React.Fragment,null,
     /* Floating bubble button */
-    !open&&h("button",{className:"chat-bubble-btn",onClick:()=>setOpen(true),"aria-label":"Open AI chat"},"💬"),
+    !open&&h("button",{id:"tour-chatbot",className:"chat-bubble-btn",onClick:()=>setOpen(true),"aria-label":"Open AI chat"},"💬"),
 
     /* Chat window */
     open&&h("div",{className:"chat-window"},
@@ -1288,9 +1288,187 @@ function useVoiceCommands({appliances,setTab,toggleAppliance,addToast}){
   return {listening,transcript,feedback,startListening};
 }
 
+/* ════════════════════════ ONBOARDING ════════════════════════ */
+function OnboardingGuide({ step, setStep, setTab }) {
+  const h = React.createElement;
+  const [targetRect, setTargetRect] = useState(null);
+  const [screenDim, setScreenDim] = useState({ w: window.innerWidth, h: window.innerHeight });
+
+  const STEPS = [
+    { title: "Welcome to GrihaNet 🏠", body: "Your unified smart home dashboard. In the next 2 minutes, we'll show you everything GrihaNet can do for your home.", target: null, tab: null },
+    { title: "Your command centre", body: "Every module of GrihaNet lives in a tab. Power tracks your electricity. Network shows who's on your Wi-Fi. Cameras watches your home. You can switch between them instantly.", target: "tour-tab-bar", tab: null },
+    { title: "Live at a glance", body: "These cards update automatically. Live Power shows your current electricity draw in kW. Today's Usage tracks how much you've consumed since midnight. All values are real-time.", target: "tour-overview-stats", tab: "overview" },
+    { title: "Control every appliance", body: "Toggle any appliance on or off with one click. GrihaNet tracks exactly how much each device costs you per hour — so you know which ones to switch off first.", target: "tour-power-grid", tab: "power" },
+    { title: "See where power is going", body: "The room breakdown shows which area of your home is consuming the most electricity. Tap any room to filter the view.", target: "tour-power-chart", tab: "power" },
+    { title: "Know who's on your network", body: "Every device on your home Wi-Fi appears here with its IP address, bandwidth used today, and online status. Spotted something unfamiliar? Hit Block instantly.", target: "tour-network-list", tab: "network" },
+    { title: "Eyes on your home", body: "Live camera feeds from every room. GrihaNet logs every motion event with a timestamp and severity level. You'll get an alert the moment anything unusual is detected.", target: "tour-cameras-grid", tab: "cameras" },
+    { title: "Nothing slips through", body: "Every important event — high power usage, unknown device, motion detected — creates an alert here. Filter by type, dismiss individually, or clear all read alerts at once.", target: "tour-alerts-list", tab: "alerts" },
+    { title: "Your smart home assistant", body: "Click the chat bubble anytime to ask GrihaNet anything. It knows your live power draw, which devices are online, and how many unread alerts you have — right now, in real time.", target: "tour-chatbot", tab: "overview" },
+    { title: "You're all set ✅", body: "GrihaNet is ready. Explore at your own pace. You can always restart this tour from Settings → General.", target: null, tab: null }
+  ];
+
+  const current = STEPS[step];
+
+  React.useEffect(() => {
+    if (current && current.tab && setTab) {
+      setTab(current.tab);
+    }
+  }, [step, current, setTab]);
+
+  React.useEffect(() => {
+    const updateRect = () => {
+      setScreenDim({ w: window.innerWidth, h: window.innerHeight });
+      if (!current || !current.target) {
+        setTargetRect(null);
+        return;
+      }
+      const el = document.getElementById(current.target);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        setTargetRect({
+          top: Math.max(0, rect.top - 8),
+          left: Math.max(0, rect.left - 8),
+          width: rect.width + 16,
+          height: rect.height + 16
+        });
+      } else {
+        setTargetRect(null);
+      }
+    };
+    
+    updateRect();
+    const handle = setInterval(updateRect, 100);
+    window.addEventListener('resize', updateRect);
+    window.addEventListener('scroll', updateRect, { passive: true });
+    
+    return () => {
+      clearInterval(handle);
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('scroll', updateRect);
+    };
+  }, [step, current]);
+
+  if (step === null) return null;
+
+  const handleNext = () => setStep((s) => s + 1);
+  const handlePrev = () => setStep((s) => s > 0 ? s - 1 : s);
+  const handleComplete = () => {
+    localStorage.setItem("grihanet_onboarding_done", "true");
+    setStep(null);
+  };
+  const isMobile = screenDim.w < 768;
+  const isModal = current.target == null || !targetRect;
+
+  let tooltipStyle = {};
+  if (isMobile) {
+    tooltipStyle = {
+      position: 'fixed',
+      bottom: 0, left: 0, right: 0,
+      background: 'var(--bg-card)', padding: 24,
+      borderTopLeftRadius: 24, borderTopRightRadius: 24,
+      boxShadow: '0 -10px 40px rgba(0,0,0,0.5)',
+      zIndex: 10001,
+      animation: 'slideUp 0.3s ease'
+    };
+  } else if (isModal) {
+    tooltipStyle = {
+      position: 'fixed',
+      top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+      background: 'var(--bg-card)', padding: 32,
+      borderRadius: 16, maxWidth: 400, width: '100%',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+      zIndex: 10001,
+      animation: 'zoomIn 0.3s ease'
+    };
+  } else {
+    const bottomSpace = screenDim.h - (targetRect.top + targetRect.height);
+    const topSpace = targetRect.top;
+    const isBelow = bottomSpace > 250 || bottomSpace > topSpace;
+    
+    let tTop = isBelow ? targetRect.top + targetRect.height + 16 : targetRect.top - 16;
+    let tLeft = targetRect.left;
+    
+    if (tLeft + 350 > screenDim.w) {
+      tLeft = screenDim.w - 366;
+    }
+    
+    tooltipStyle = {
+      position: 'fixed',
+      top: isBelow ? tTop : 'auto',
+      bottom: !isBelow ? screenDim.h - tTop : 'auto',
+      left: Math.max(16, tLeft),
+      width: 350,
+      background: 'var(--bg-card)', padding: 24,
+      borderRadius: 16, border: '1px solid var(--border)',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+      zIndex: 10001,
+      animation: 'fadeUp 0.3s ease'
+    };
+  }
+
+  return h(React.Fragment, null,
+    h("div", {
+      style: {
+        position: 'fixed', inset: 0, zIndex: 9999, pointerEvents: 'none', overflow: 'hidden',
+        ...(isModal 
+          ? { background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)' }
+          : {  })
+      }
+    },
+      !isModal && h("div", {
+        style: {
+          position: 'absolute',
+          top: targetRect.top, left: targetRect.left,
+          width: targetRect.width, height: targetRect.height,
+          boxShadow: '0 0 0 9999px rgba(0,0,0,0.85)',
+          borderRadius: 12,
+          border: '2px solid var(--teal)',
+          boxSizing: 'border-box',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          pointerEvents: 'none'
+        }
+      })
+    ),
+    h("div", {
+      style: { position: 'fixed', inset: 0, zIndex: 10000, cursor: 'default' },
+      onClick: (e) => { e.preventDefault(); e.stopPropagation(); }
+    }),
+    h("div", { style: tooltipStyle },
+      !isModal && h("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--teal)', marginBottom: 8, letterSpacing: 1 } },
+        `STEP ${step + 1} OF ${STEPS.length}`
+      ),
+      h("h3", { style: { margin: '0 0 8px', fontSize: isModal ? 24 : 18, fontWeight: 700, color: 'var(--text)' } }, current.title),
+      h("p", { style: { margin: '0 0 24px', fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.5 } }, current.body),
+      h("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+        h("button", { 
+          onClick: handleComplete,
+          style: { background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans'" }
+        }, step === STEPS.length - 1 ? "" : "Skip tour"),
+        h("div", { style: { display: 'flex', gap: 12 } },
+          step > 0 && h("button", {
+            onClick: handlePrev,
+            style: { padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans'" }
+          }, "Back"),
+          h("button", {
+            onClick: step === STEPS.length - 1 ? handleComplete : handleNext,
+            style: { padding: '8px 20px', borderRadius: 8, border: 'none', background: 'var(--teal)', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans'" }
+          }, step === 0 ? "Let's go →" : step === STEPS.length - 1 ? "Open my dashboard →" : "Next →")
+        )
+      ),
+      isMobile && h("div", { style: { display: 'flex', justifyContent: 'center', gap: 6, marginTop: 24 } },
+        STEPS.map((_, i) => h("div", {
+          key: i,
+          style: { width: 6, height: 6, borderRadius: '50%', background: i === step ? 'var(--teal)' : 'var(--border)' }
+        }))
+      )
+    )
+  );
+}
+
 /* ════════════════════════ MAIN APP ════════════════════════ */
 function GrihaNet(){
   const [loggedIn,setLoggedIn]=useState(false);
+  const [onboardingStep,setOnboardingStep]=useState(null);
   const [user,setUser]=useState(null);
 
   const doLogout=useCallback(()=>{
@@ -1324,6 +1502,18 @@ function GrihaNet(){
       if(dm!==null)setSettings(s=>({...s,darkMode:dm==='true'}));
     }catch(e){}
   },[]);
+
+  // Automatic onboarding delay
+  useEffect(()=>{
+    if (!loggedIn) return;
+    const done = localStorage.getItem("grihanet_onboarding_done");
+    if (!done) {
+      const timer = setTimeout(() => {
+        setOnboardingStep(0);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [loggedIn]);
   const [tab,setTab]=useState("overview");
   const [appliances,setAppliances]=useState(INIT_APPLIANCES);
   const [devices,setDevices]=useState(INIT_DEVICES);
@@ -1752,6 +1942,7 @@ function GrihaNet(){
     ),
     /* ═══ TAB NAV — sticky below header ═══ */
     h("nav",{
+      id: "tour-tab-bar",
       style:{
         position:"sticky",top:60,zIndex:900,
         display:"flex",alignItems:"center",
@@ -1847,7 +2038,7 @@ function GrihaNet(){
         ),
 
         /* Stat cards row */
-        h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:14,marginBottom:20}},
+        h("div",{id:"tour-overview-stats",style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:14,marginBottom:20}},
 
           /* Card 1 — Live Power (pulsing dot) */
           h("div",{className:"stat-card fadeUp d1",onClick:()=>setTab("power"),style:{cursor:"pointer"},"data-tooltip":"Real-time electricity usage"},
@@ -2022,7 +2213,7 @@ function GrihaNet(){
             )
           ),
           /* Room donut */
-          h(Card,{className:"fadeUp d4",style:{display:"flex",flexDirection:"column"}},
+          h(Card,{id:"tour-power-chart",className:"fadeUp d4",style:{display:"flex",flexDirection:"column"}},
             h("div",{style:{fontSize:14,fontWeight:700,marginBottom:12}},"🏠 Room-wise Breakdown"),
             roomData.length>0?h(React.Fragment,null,
               /* Room pills */
@@ -2088,7 +2279,7 @@ function GrihaNet(){
         ),
 
         /* ── Appliance Card Grid ── */
-        h(Card,{className:"fadeUp d5"},
+        h(Card,{id:"tour-power-grid",className:"fadeUp d5"},
           h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
             h("div",null,
               h("div",{style:{fontSize:14,fontWeight:700,color:"var(--text)"}},"🔌 Appliance Control"),
@@ -2215,7 +2406,7 @@ function GrihaNet(){
         ),
 
         /* Device list */
-        h(Card,{className:"fadeUp d4"},
+        h(Card,{id:"tour-network-list",className:"fadeUp d4"},
           h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
             h("div",{style:{fontSize:14,fontWeight:700}},"\uD83D\uDCE1 Connected Devices"),
             h("span",{className:"badge badge-teal"},onlineCount+" online")
@@ -2353,18 +2544,20 @@ function GrihaNet(){
               display:"flex",alignItems:"center",gap:6}},"📹 + Add Camera")
         ),
         /* Camera cards */
-        cameras.length===0
-          ?h(Card,{style:{textAlign:"center",padding:40,color:"var(--text-muted)"}},
-              h("div",{style:{fontSize:40,marginBottom:12}},"📷"),
-              h("div",{style:{fontSize:14,fontWeight:600,marginBottom:8}},"No cameras yet"),
-              h("div",{style:{fontSize:12,marginBottom:20}},"Add your first camera to start monitoring"),
-              h("button",{onClick:()=>setShowAddCamera(true),
-                style:{padding:"10px 24px",borderRadius:10,border:"none",background:T.accent,
-                  color:"#111",fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}},"+ Add Camera")
-            )
-          :h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:12,marginBottom:14}},
-              cameras.map(c=>h("div",{key:c.id,className:"fadeUp d"+(c.id%6+1)},h(CamFeed,{cam:c,onToggle:toggleCam,onDelete:deleteCamera})))
-            ),
+        h("div", {id:"tour-cameras-grid"},
+          cameras.length===0
+            ?h(Card,{style:{textAlign:"center",padding:40,color:"var(--text-muted)"}},
+                h("div",{style:{fontSize:40,marginBottom:12}},"📷"),
+                h("div",{style:{fontSize:14,fontWeight:600,marginBottom:8}},"No cameras yet"),
+                h("div",{style:{fontSize:12,marginBottom:20}},"Add your first camera to start monitoring"),
+                h("button",{onClick:()=>setShowAddCamera(true),
+                  style:{padding:"10px 24px",borderRadius:10,border:"none",background:T.accent,
+                    color:"#111",fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}},"+ Add Camera")
+              )
+            :h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:12,marginBottom:14}},
+                cameras.map(c=>h("div",{key:c.id,className:"fadeUp d"+(c.id%6+1)},h(CamFeed,{cam:c,onToggle:toggleCam,onDelete:deleteCamera})))
+              )
+        ),
         /* Motion log */
         h(Card,{className:"fadeUp d5"},
           h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
@@ -2455,6 +2648,7 @@ function GrihaNet(){
         ),
 
         /* Alert list */
+        h("div", {id:"tour-alerts-list"},
         (()=>{
           const typeColors={danger:"var(--danger)",warning:"var(--warn)",info:"var(--blue)",success:"var(--success)"};
           const fa=alertFilter==="all"?alerts:alertFilter==="unread"?alerts.filter(a=>!a.read):alerts.filter(a=>a.type===alertFilter);
@@ -2517,13 +2711,14 @@ function GrihaNet(){
             })
           );
         })()
+        )
       ),
 
       /* ═══ AUTOMATIONS ═══ */
       tab==="automations"&&h(React.Fragment,null,
         /* New Rule Modal */
         showAutoModal&&h(AutomationModal,{appliances,onClose:()=>setShowAutoModal(false),onCreate:async rule=>{await createAutomation(rule);setShowAutoModal(false);}}),
-        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
+        h("div",{id:"tour-automations",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
           h("div",null,
             h("h2",{style:{fontSize:18,fontWeight:700,margin:0}},"🤖 Automations"),
             h("p",{style:{fontSize:12,color:"var(--text-muted)",marginTop:2}},automations.length+" rule"+(automations.length!==1?"s":""))
@@ -2602,6 +2797,15 @@ function GrihaNet(){
             h(Badge,{text:user.role.toUpperCase(),color:user.role==="admin"?T.accent:T.blue})
           ),
           h("div",{style:{marginBottom:20,paddingBottom:16,borderBottom:"1px solid rgba(30,41,59,0.2)"}},
+            h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+              h("div",null,
+                h("div",{style:{fontSize:13,fontWeight:500,marginBottom:4}},"Restart Onboarding Tour"),
+                h("div",{style:{fontSize:11,color:"var(--text-muted)",marginBottom:12}},"Watch the welcome tutorial again.")
+              ),
+              h("button",{onClick:()=>{localStorage.removeItem("grihanet_onboarding_done");window.location.reload();},style:{padding:"8px 16px",borderRadius:8,background:"var(--teal-glow)",color:"var(--teal)",border:"none",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"'DM Sans'"}},"Restart Tour")
+            )
+          ),
+          h("div",{style:{marginBottom:20,paddingBottom:16,borderBottom:"1px solid rgba(30,41,59,0.2)"}},
             h("div",{style:{fontSize:13,fontWeight:500,marginBottom:4}},"System Report"),
             h("div",{style:{fontSize:11,color:"var(--text-muted)",marginBottom:12}},"Generate a comprehensive PDF summary of your home's usage and status."),
             h("button",{onClick:generatePDF,style:{padding:"10px 18px",borderRadius:8,background:T.accent,color:"#000",border:"none",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:8}},h("span",null,"📄"),"Download PDF Report")
@@ -2649,7 +2853,10 @@ function GrihaNet(){
     h("footer",{style:{padding:"16px 20px",borderTop:`1px solid ${T.border}`,textAlign:"center"}},h("span",{style:{fontSize:11,color:"var(--text-muted)"}},"GrihaNet v1.0 • Built by Team GrihaNet • VIT Vellore © 2026")),
     
     /* 💬 CHAT WIDGET */
-    h(ChatWidget, {user, appliances, devices, cameras, alerts})
+    h(ChatWidget, {user, appliances, devices, cameras, alerts}),
+
+    /* 🧭 ONBOARDING GUIDE OVERLAY */
+    loggedIn && onboardingStep !== null && h(OnboardingGuide, { step: onboardingStep, setStep: setOnboardingStep, setTab: setTab })
   );
 }
 
