@@ -152,12 +152,17 @@ function CustomCursor({ enabled }) {
   const cursorRef = useRef(null);
   useEffect(() => {
     if (!enabled) return;
+    let rafId = null;
     const handleMouseMove = e => {
       if (!cursorRef.current) return;
-      cursorRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
-      const isHover = e.target.closest('button, a, .card, .btn, .stat-card, input, select, .toggle');
-      if (isHover) cursorRef.current.classList.add('is-hover');
-      else cursorRef.current.classList.remove('is-hover');
+      if (rafId) cancelAnimationFrame(rafId);
+      
+      rafId = requestAnimationFrame(() => {
+        cursorRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+        const isHover = e.target.closest('button, a, .card, .btn, .stat-card, input, select, .toggle');
+        if (isHover) cursorRef.current.classList.add('is-hover');
+        else cursorRef.current.classList.remove('is-hover');
+      });
     };
     const handleMouseDown = () => cursorRef.current?.classList.add('is-active');
     const handleMouseUp = () => cursorRef.current?.classList.remove('is-active');
