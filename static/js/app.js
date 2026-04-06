@@ -177,7 +177,7 @@ function CustomCursor({ enabled }) {
   }, [enabled]);
   if (!enabled) return null;
   const h = React.createElement;
-  return h("div", { ref: cursorRef, className: "grihanet-cursor-container" },
+  const content = h("div", { ref: cursorRef, className: "grihanet-cursor-container" },
     h("style", null, `
       .atom-core { fill: #ffd700; transition: fill 0.2s ease-out; }
       .atom-orbit { stroke: #ffb366; transition: stroke 0.2s ease-out; }
@@ -230,6 +230,8 @@ function CustomCursor({ enabled }) {
       )
     )
   );
+
+  return ReactDOM.createPortal(content, document.body);
 }
 
 function Card({children,style,glow,onClick,className,onMouseMove,onMouseLeave,id}){
@@ -1830,7 +1832,10 @@ function GrihaNet(){
   const devIcons={phone:"📱",laptop:"💻",tv:"📺",gaming:"🎮",unknown:"❓"};
   const sevColor={high:T.red,medium:T.orange,low:T.textSec};
 
-  if(!loggedIn)return React.createElement(AuthScreen,{onLogin:handleLogin});
+  if(!loggedIn) return React.createElement(React.Fragment, null,
+    React.createElement(CustomCursor, {enabled: settings.customCursor}),
+    React.createElement(AuthScreen, {onLogin:handleLogin})
+  );
 
   /* ─── Layout builder helpers ─── */
   const h=React.createElement;
