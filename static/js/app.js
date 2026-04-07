@@ -516,12 +516,6 @@ function CamFeed({cam,onToggle,onDelete}){
       }),
       /* Active camera content overlay */
       isOn&&h(React.Fragment,null,
-        /* Scan line */
-        h("div",{className:"cam-scan",style:{
-          position:"absolute",left:0,right:0,height:"1px",zIndex:2,
-          background:"linear-gradient(90deg,transparent,rgba(0,229,160,0.5),transparent)",
-          boxShadow:"0 0 8px rgba(0,229,160,0.3)",
-        }}),
         /* REC badge top-left */
         h("div",{style:{position:"absolute",top:10,left:12,display:"flex",alignItems:"center",gap:5,zIndex:3}},
           h("div",{style:{width:6,height:6,borderRadius:"50%",background:"var(--danger)",animation:"pulse 1.5s infinite"}}),
