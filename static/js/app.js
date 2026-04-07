@@ -509,7 +509,12 @@ function CamFeed({cam,onToggle,onDelete}){
       filter:isOn?"none":"grayscale(0.8) brightness(0.5)",
       overflow:"hidden",
     }},
-      /* Active camera content */
+      /* Live Stream Feed Layer */
+      isOn&&cam.streamUrl&&h("img",{
+        src:cam.streamUrl,
+        style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",zIndex:1}
+      }),
+      /* Active camera content overlay */
       isOn&&h(React.Fragment,null,
         /* Scan line */
         h("div",{className:"cam-scan",style:{
@@ -525,9 +530,9 @@ function CamFeed({cam,onToggle,onDelete}){
         /* Status badge top-right */
         h("span",{className:"badge badge-teal",style:{position:"absolute",top:10,right:10,zIndex:3,fontSize:8,padding:"2px 7px"}},"ACTIVE"),
         /* Timestamp top-right below badge */
-        h("div",{style:{position:"absolute",top:30,right:10,fontSize:8,color:"rgba(255,255,255,0.35)",fontFamily:"'IBM Plex Mono',monospace",zIndex:3}},new Date().toLocaleTimeString()),
-        /* Center icon */
-        h("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",zIndex:1}},
+        h("div",{style:{position:"absolute",top:30,right:10,fontSize:8,color:"rgba(255,255,255,0.35)",fontFamily:"'IBM Plex Mono',monospace",zIndex:3,textShadow:"0 1px 2px rgba(0,0,0,0.8)"}},new Date().toLocaleTimeString()),
+        /* Center icon - Hide if real stream is playing */
+        !cam.streamUrl&&h("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",zIndex:1}},
           h("div",{style:{textAlign:"center",opacity:.25}},
             h("div",{style:{fontSize:36}},"📹"),
             h("div",{style:{fontSize:8,fontFamily:"'IBM Plex Mono',monospace",letterSpacing:3,marginTop:4}},"LIVE FEED")
