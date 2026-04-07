@@ -11,6 +11,7 @@ from config import Config, _is_readonly_fs
 from models import db
 from seed import seed_database
 import os
+from services.mqtt_service import start_mqtt_listener
 
 def create_app():
     app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -20,6 +21,8 @@ def create_app():
     db.init_app(app)
     CORS(app, supports_credentials=True)
     JWTManager(app)
+
+    start_mqtt_listener()
 
     # Register blueprints
     from routes.auth import auth_bp

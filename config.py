@@ -1,4 +1,7 @@
-"""Application configuration."""
+"""
+app.py
+Application configuration.
+"""
 
 import os
 from datetime import timedelta

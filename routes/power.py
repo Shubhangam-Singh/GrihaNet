@@ -1,4 +1,7 @@
-"""Power Monitoring Module API routes."""
+"""
+power.py
+Power Monitoring Module API routes.
+"""
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -7,7 +10,7 @@ from services.simulation import (
     generate_power_history_24h, generate_weekly_data, get_energy_recommendations
 )
 
-from services.mqtt_service import send_appliance_state
+from services.mqtt_service import send_appliance_state, latest_meter_data
 
 power_bp = Blueprint("power", __name__)
 
@@ -15,6 +18,11 @@ power_bp = Blueprint("power", __name__)
 def _user_rate(uid):
     s = Settings.query.filter_by(user_id=uid, key="rate").first()
     return float(s.value) if s else 6.5
+
+@power_bp.route("/meter", methods=["GET"])
+@jwt_required()
+def meter_data():
+    return jsonify(latest_meter_data)
 
 
 @power_bp.route("/live", methods=["GET"])
