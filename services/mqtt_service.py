@@ -34,7 +34,7 @@ def parse_meter_payload(payload):
             "vrms": float(parts[0]),
             "irms": float(parts[1]),
             "pf": float(parts[2]),
-            "S": float(parts[3]),
+            "S": float(parts[3]), 
             "P": float(parts[4]),
             "Q": float(parts[5]),
             "vthd": float(parts[6]),
@@ -59,7 +59,8 @@ def on_message(client, userdata, msg):
     data = parse_meter_payload(payload)
 
     if data:
-        latest_meter_data = data
+        latest_meter_data.update(data)
+
         # print("[METER DATA]", data)
 
 

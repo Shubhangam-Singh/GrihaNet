@@ -182,36 +182,50 @@
       color: var(--teal);
     }
 
-    /* ── CUSTOM INTERACTIVE CURSOR ── */
-    body.custom-cursor-active, body.custom-cursor-active *:not(input):not(textarea) { cursor: none !important; }
-    input, textarea { cursor: text !important; }
+    /* ── CUSTOM INTERACTIVE CURSOR COMPONENT ── */
+    html.custom-cursor-active, body.custom-cursor-active, 
+    .custom-cursor-active * { 
+      cursor: none !important; 
+    }
+    .grihanet-cursor-container {
+      position: fixed; top: 0; left: 0;
+      width: 40px; height: 40px;
+      pointer-events: none; z-index: 999999;
+      will-change: transform;
+    }
+    .cursor-variant-default, .cursor-variant-hover {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s, filter 0.15s ease-out;
+    }
+    
+    /* Default Pointer State */
+    .grihanet-cursor-container:not(.is-hover) .cursor-variant-hover { opacity: 0; transform: scale(0.5); }
+    .grihanet-cursor-container:not(.is-hover) .cursor-variant-default { opacity: 1; transform: scale(1); }
+    
+    /* Hover/Action State */
+    .grihanet-cursor-container.is-hover .cursor-variant-default { opacity: 0; transform: scale(1.5); }
+    .grihanet-cursor-container.is-hover .cursor-variant-hover { opacity: 1; transform: scale(1); }
+    
+    /* Active State (MouseDown) */
+    .grihanet-cursor-container.is-active .cursor-variant-default {
+      transform: scale(0.9);
+      filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.6));
+    }
+    .grihanet-cursor-container.is-active.is-hover .cursor-variant-hover {
+      transform: scale(0.85);
+      filter: drop-shadow(0 0 12px rgba(255, 179, 0, 0.8));
+    }
 
-    .custom-cursor-dot, .custom-cursor-outline { display: none; }
-    body.custom-cursor-active .custom-cursor-dot, body.custom-cursor-active .custom-cursor-outline { display: block; }
-
-    .custom-cursor-dot {
-      position: fixed; top: 0; left: 0; width: 6px; height: 6px;
-      background: var(--teal); border-radius: 50%; pointer-events: none; z-index: 10000;
-      transform: translate(-50%, -50%);
-      transition: width 0.2s, height 0.2s, background 0.2s;
+    @keyframes pulse-ring {
+      0% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(1.6); opacity: 0; }
     }
-    .custom-cursor-outline {
-      position: fixed; top: 0; left: 0; width: 36px; height: 36px;
-      border: 1.5px solid var(--teal); border-radius: 50%; pointer-events: none; z-index: 9999;
-      transform: translate(-50%, -50%); /* Base transform */
-      transition: width 0.2s, height 0.2s, background 0.2s, border-color 0.2s;
+    @keyframes spin-dash {
+      100% { transform: rotate(360deg); }
     }
-    body.cursor-hover .custom-cursor-dot {
-      background: transparent;
-    }
-    body.cursor-hover .custom-cursor-outline {
-      width: 50px; height: 50px;
-      background: var(--teal-glow);
-      border-color: var(--teal);
-    }
-    [data-theme="light"] .custom-cursor-outline {
-      border-color: rgba(0, 163, 112, 0.8);
-    }
+    .pulse-ring { transform-origin: center; animation: pulse-ring 1.2s infinite ease-out; }
+    .spin-dash { transform-origin: center; animation: spin-dash 2s infinite linear; }
 
     /* ── SCROLLBAR (WebKit) ── */
     ::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
@@ -411,6 +425,76 @@
     .d4{animation-delay:.20s}.d5{animation-delay:.25s}.d6{animation-delay:.30s}
     .d7{animation-delay:.35s}.d8{animation-delay:.40s}
 
+    /* ── PREMIUM ANIMATIONS (Togglable via body.premium-anims) ── */
+    body.premium-anims .anim-glow-border {
+      position: relative;
+      overflow: hidden;
+    }
+    body.premium-anims .anim-glow-border::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: conic-gradient(transparent, var(--teal), transparent 30%);
+      animation: spin 3s linear infinite;
+      z-index: 0;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    body.premium-anims .anim-glow-border::after {
+      content: '';
+      position: absolute;
+      inset: 1px;
+      background: var(--bg-card);
+      border-radius: inherit;
+      z-index: 1;
+      pointer-events: none;
+    }
+    body.premium-anims .anim-glow-border > * {
+      position: relative;
+      z-index: 2;
+    }
+    
+    body.premium-anims .tilt-card {
+      transition: transform 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.1s ease;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+    body.premium-anims .tilt-card:hover {
+      transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale3d(1.02, 1.02, 1.02);
+      box-shadow: var(--shadow-teal);
+      z-index: 10;
+    }
+    
+    body.premium-anims .ripple-wrapper {
+      position: relative;
+      overflow: hidden;
+    }
+    body.premium-anims .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(0);
+      animation: ripple-anim 0.6s linear;
+      pointer-events: none;
+      z-index: 100;
+    }
+    [data-theme="light"] body.premium-anims .ripple {
+      background: rgba(0, 0, 0, 0.15);
+    }
+    @keyframes ripple-anim {
+      to { transform: scale(4); opacity: 0; }
+    }
+    
+    /* Enhance Cascade Morphing */
+    body.premium-anims .fadeUp {
+      animation: cascadeFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+    }
+    @keyframes cascadeFadeUp {
+      from { opacity: 0; transform: translateY(30px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
     /* ── MODAL ── */
     .modal-backdrop {
       position: fixed; inset: 0;
@@ -557,37 +641,11 @@
 </style>
 </head>
 <body>
-  <!-- Custom Cursor Elements -->
-  <div id="custom-cursor-dot" class="custom-cursor-dot"></div>
-  <div id="custom-cursor-outline" class="custom-cursor-outline"></div>
-
+  <!-- Dropped DOM cursors: now using native zero-lag CSS encoded SVG instead -->
   <canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-1;pointer-events:none;"></canvas>
   <script>
     (function(){
-      // Cursor logic
-      const dot = document.getElementById('custom-cursor-dot');
-      const outline = document.getElementById('custom-cursor-outline');
-      
-      window.addEventListener('mousemove', (e) => {
-        if(dot && outline) {
-          dot.style.left = e.clientX + 'px';
-          dot.style.top = e.clientY + 'px';
-          
-          outline.animate({
-            left: e.clientX + 'px',
-            top: e.clientY + 'px'
-          }, { duration: 150, fill: "forwards" });
-        }
-      });
-      
-      document.body.addEventListener('mouseover', (e) => {
-        const target = e.target;
-        if(target.tagName === 'BUTTON' || target.tagName === 'A' || target.closest('button') || target.tagName === 'svg' || target.closest('.card') || target.closest('.stat-card')) {
-          document.body.classList.add('cursor-hover');
-        } else {
-          document.body.classList.remove('cursor-hover');
-        }
-      });
+      // Background canvas logic
 
       // Canvas Background Logic
       const canvas = document.getElementById('bg-canvas');
@@ -612,11 +670,19 @@
       };
 
       let useCustomCursor = localStorage.getItem('grihanet_customCursor') !== 'false';
-      if(useCustomCursor) document.body.classList.add('custom-cursor-active');
+      if(useCustomCursor) {
+        document.body.classList.add('custom-cursor-active');
+        document.documentElement.classList.add('custom-cursor-active');
+      }
       window.setCustomCursor = (val) => {
         useCustomCursor = val;
-        if(val) document.body.classList.add('custom-cursor-active');
-        else document.body.classList.remove('custom-cursor-active');
+        if(val) {
+          document.body.classList.add('custom-cursor-active');
+          document.documentElement.classList.add('custom-cursor-active');
+        } else {
+          document.body.classList.remove('custom-cursor-active');
+          document.documentElement.classList.remove('custom-cursor-active');
+        }
       };
 
       // Mouse tracking
@@ -773,7 +839,7 @@
   </script>
   <div id="root"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script type="text/javascript" src="/static/js/app.js?v=39"></script>
+  <script type="text/javascript" src="/static/js/app.js?v=49"></script>
   <script>
     // Unregister stale service workers and clear caches to prevent black screen
     if ('serviceWorker' in navigator) {

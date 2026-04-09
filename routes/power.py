@@ -52,7 +52,7 @@ def get_appliances():
     rate = _user_rate(uid)
 
     result = []
-    for a in appliances:
+    for a in appliances: 
         d = a.to_dict()
         d["costPerHour"] = round((a.watts / 1000) * rate, 1) if a.is_on else 0
         result.append(d)
@@ -66,7 +66,7 @@ def toggle_appliance(aid):
     uid = get_jwt_identity()
     appliance = Appliance.query.filter_by(id=aid, user_id=uid).first_or_404()
     appliance.is_on = not appliance.is_on
-
+    print(f"[DEBUG] {appliance.name} GPIO = {appliance.gpio_pin}")
     # ✅ ONLY ONE MQTT CALL (guarded)
     if appliance.gpio_pin is not None:
         send_appliance_state(appliance)

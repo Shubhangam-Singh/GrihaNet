@@ -1,12 +1,58 @@
-"""Surveillance & Security Module API routes."""
+"""
+cameras.py
+Surveillance & Security Module API routes.
+"""
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, Camera, MotionEvent, Alert
 from services.simulation import generate_motion_event
 from datetime import datetime, timezone
+import cv2
+from flask import Response
+from services.vision_pipeline import VisionPipeline
 
 cameras_bp = Blueprint("cameras", __name__)
+vision = VisionPipeline()
+
+@cameras_bp.route("/<int:cid>/stream")
+def stream_camera(cid):
+    """
+    Stream annotated video feed for a camera
+    """
+    cam = Camera.query.filter_by(id=cid).first_or_404()
+
+    if not cam.stream_url:
+        return jsonify({"error": "No stream URL configured"}), 400
+
+    def generate():
+        cap = cv2.VideoCapture(cam.stream_url)
+
+        while True:
+            success, frame = cap.read()
+            if not success:
+                break
+
+            # 🔥 IMPORTANT: resize for performance
+            frame = cv2.resize(frame, (640, 480))
+
+            # PROCESS FRAME
+            frame = vision.process(frame)
+
+            _, buffer = cv2.imencode(".jpg", frame)
+            frame_bytes = buffer.tobytes()
+
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n" +
+                frame_bytes +
+                b"\r\n"
+            )
+
+    return Response(
+        generate(),
+        mimetype="multipart/x-mixed-replace; boundary=frame"
+    )
 
 
 @cameras_bp.route("/", methods=["GET"])
